@@ -80,7 +80,7 @@ export function ConversationSidebar({
         <div className="flex flex-col gap-2 p-3">
           <Button
             className="w-full justify-start h-auto"
-            variant="outline"
+            variant="secondary"
             onClick={onNew}
           >
             <Plus />

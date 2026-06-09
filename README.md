@@ -9,9 +9,12 @@ AI live-chat with a **Live2D** character that speaks replies with synced mouth m
 - 🎭 **Live2D model** rendered with PixiJS v7 + [`pixi-live2d-display-lipsyncpatch`](https://github.com/RaSan147/pixi-live2d-display)
 - 👄 **Lip-sync** — TTS audio amplitude drives `ParamMouthOpenY`
 - 🗣️ **Client-side TTS** behind a swappable provider (Edge TTS now, MiniMax later)
+- 🎙️ **Speech-to-text** — free, key-less voice input via the browser Web Speech API
 - 💬 **Streaming chat** over SSE, with a sentence-chunked speak queue (audio starts before the full reply finishes)
 - 🖐️ **Tap interaction** — touch head/body to trigger motions + expressions
-- 🗂️ **Multiple conversations** (ChatGPT/Claude-style) persisted in `localStorage`, with search, rename, delete
+- 🗂️ **Multiple conversations** (ChatGPT/Claude-style) persisted in `localStorage`
+- 🔍 **Command-palette search** (`Cmd`/`Ctrl`+`K`) with date grouping + keyboard nav; rename/delete chats
+- 🌸 **Moe-pink** accent theme (light + dark)
 - 📱 Responsive — overlay chat panel + collapsible drawer sidebar
 
 ## Tech stack
@@ -22,6 +25,7 @@ AI live-chat with a **Live2D** character that speaks replies with synced mouth m
 | Styling | Tailwind v4 + shadcn/ui (Base UI primitives) |
 | Live2D | PixiJS **v7** (pinned), `pixi-live2d-display-lipsyncpatch` (Cubism 4) |
 | TTS | `edge-tts-universal` (browser) |
+| STT | Web Speech API (browser-native) |
 | Runtime | Bun |
 
 > ⚠️ `pixi-live2d-display` supports PixiJS **v6/v7 only — not v8**. Keep Pixi pinned to v7.
@@ -44,6 +48,10 @@ Open http://localhost:5173.
 | `VITE_MODEL_URL` | Live2D `.model3.json` entry | bundled Haru sample |
 | `VITE_TTS_PROVIDER` | `edge` \| `minimax` | `edge` |
 | `VITE_EDGE_TTS_VOICE` | Edge TTS voice id | `en-US-AvaNeural` |
+| `VITE_STT_LANG` | Speech-to-text language (Web Speech API) | browser language |
+
+> 🎙️ STT needs **HTTPS** (or `localhost`) + mic permission, and runs on Chromium/Safari.
+> The mic button auto-hides where the Web Speech API is unavailable (e.g. Firefox).
 
 ## Hermes agent contract
 
