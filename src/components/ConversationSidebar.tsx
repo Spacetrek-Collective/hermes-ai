@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, Pencil, Plus, Search, Sparkles, Trash2, X } from "lucide-react";
+import { Check, Pencil, Search, Sparkles, SquarePen, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -79,11 +79,11 @@ export function ConversationSidebar({
         {/* New chat */}
         <div className="flex flex-col gap-2 p-3">
           <Button
-            className="w-full justify-start h-auto"
-            variant="secondary"
+            className="w-full justify-start h-auto border"
+            variant="ghost"
             onClick={onNew}
           >
-            <Plus />
+            <SquarePen />
             New chat
           </Button>
         </div>
