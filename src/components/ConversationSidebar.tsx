@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, Pencil, Plus, Search, Sparkles, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ interface ConversationSidebarProps {
   onNew: () => void;
   onDelete: (id: string) => void;
   onRename: (id: string, title: string) => void;
+  onOpenSearch: () => void;
   /** Mobile drawer open state. */
   open: boolean;
   onClose: () => void;
@@ -25,23 +26,10 @@ export function ConversationSidebar({
   onNew,
   onDelete,
   onRename,
+  onOpenSearch,
   open,
   onClose,
 }: ConversationSidebarProps) {
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const searchRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (searchOpen) searchRef.current?.focus();
-  }, [searchOpen]);
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return conversations;
-    return conversations.filter((c) => c.title.toLowerCase().includes(q));
-  }, [conversations, query]);
-
   return (
     <>
       {/* Backdrop (all sizes — sidebar is an overlay drawer) */}
@@ -72,12 +60,7 @@ export function ConversationSidebar({
               size="icon"
               className="size-8"
               aria-label="Search chats"
-              onClick={() => {
-                setSearchOpen((s) => {
-                  if (s) setQuery("");
-                  return !s;
-                });
-              }}
+              onClick={onOpenSearch}
             >
               <Search />
             </Button>
@@ -93,7 +76,7 @@ export function ConversationSidebar({
           </div>
         </header>
 
-        {/* New chat + optional search field */}
+        {/* New chat */}
         <div className="flex flex-col gap-2 p-3">
           <Button
             className="w-full justify-start h-auto"
@@ -103,34 +86,16 @@ export function ConversationSidebar({
             <Plus />
             New chat
           </Button>
-          {searchOpen && (
-            <div className="relative mt-1">
-              <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                ref={searchRef}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") {
-                    setQuery("");
-                    setSearchOpen(false);
-                  }
-                }}
-                placeholder="Search chats…"
-                className="h-10 pl-8"
-              />
-            </div>
-          )}
         </div>
 
         <ScrollArea className="flex-1">
           <ul className="flex flex-col gap-1 p-3 pt-0">
-            {filtered.length === 0 && (
+            {conversations.length === 0 && (
               <li className="px-2 py-6 text-center text-xs text-muted-foreground">
-                {query ? "No matching chats" : "No chats yet"}
+                No chats yet
               </li>
             )}
-            {filtered.map((c) => (
+            {conversations.map((c) => (
               <ConversationItem
                 key={c.id}
                 conversation={c}

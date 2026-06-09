@@ -1,8 +1,9 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Menu } from 'lucide-react'
 import { Live2DStage, type Live2DHandle } from '@/components/Live2DStage'
 import { ChatPanel } from '@/components/ChatPanel'
 import { ConversationSidebar } from '@/components/ConversationSidebar'
+import { SearchDialog } from '@/components/SearchDialog'
 import { Button } from '@/components/ui/button'
 import { useConversations } from '@/hooks/useConversations'
 import { useHermesChat } from '@/hooks/useHermesChat'
@@ -14,6 +15,19 @@ const MODEL_URL =
 function App() {
   const live2dRef = useRef<Live2DHandle>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+
+  // Cmd/Ctrl+K opens the search palette.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setSearchOpen((o) => !o)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   const {
     conversations,
@@ -43,8 +57,23 @@ function App() {
         }}
         onDelete={deleteChat}
         onRename={renameChat}
+        onOpenSearch={() => setSearchOpen(true)}
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+      />
+
+      <SearchDialog
+        open={searchOpen}
+        conversations={conversations}
+        onClose={() => setSearchOpen(false)}
+        onSelect={(id) => {
+          selectChat(id)
+          setSidebarOpen(false)
+        }}
+        onNew={() => {
+          newChat()
+          setSidebarOpen(false)
+        }}
       />
 
       <main className="relative h-full w-full overflow-hidden bg-gradient-to-b from-background to-secondary">
