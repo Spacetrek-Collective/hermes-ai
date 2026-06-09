@@ -62,19 +62,20 @@ function App() {
         onClose={() => setSidebarOpen(false)}
       />
 
-      <SearchDialog
-        open={searchOpen}
-        conversations={conversations}
-        onClose={() => setSearchOpen(false)}
-        onSelect={(id) => {
-          selectChat(id)
-          setSidebarOpen(false)
-        }}
-        onNew={() => {
-          newChat()
-          setSidebarOpen(false)
-        }}
-      />
+      {searchOpen && (
+        <SearchDialog
+          conversations={conversations}
+          onClose={() => setSearchOpen(false)}
+          onSelect={(id) => {
+            selectChat(id)
+            setSidebarOpen(false)
+          }}
+          onNew={() => {
+            newChat()
+            setSidebarOpen(false)
+          }}
+        />
+      )}
 
       <main className="relative h-full w-full overflow-hidden bg-gradient-to-b from-background to-secondary">
         <Live2DStage

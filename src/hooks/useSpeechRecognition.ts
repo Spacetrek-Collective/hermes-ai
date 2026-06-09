@@ -28,7 +28,9 @@ export function useSpeechRecognition({
   const [error, setError] = useState<string | null>(null)
   const recognitionRef = useRef<SpeechRecognition | null>(null)
   const cbRef = useRef(onTranscript)
-  cbRef.current = onTranscript
+  useEffect(() => {
+    cbRef.current = onTranscript
+  }, [onTranscript])
 
   const stop = useCallback(() => {
     recognitionRef.current?.stop()

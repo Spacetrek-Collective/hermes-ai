@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils'
 import type { Conversation } from '@/types/hermes'
 
 interface SearchDialogProps {
-  open: boolean
   conversations: Conversation[]
   onClose: () => void
   onSelect: (id: string) => void
@@ -33,7 +32,6 @@ function groupLabel(ts: number): string {
 }
 
 export function SearchDialog({
-  open,
   conversations,
   onClose,
   onSelect,
@@ -68,18 +66,10 @@ export function SearchDialog({
     [filtered],
   )
 
+  // Focus the field once the dialog mounts (it's mounted only while open).
   useEffect(() => {
-    if (open) {
-      setQuery('')
-      setActiveIndex(0)
-      // focus after the dialog paints
-      requestAnimationFrame(() => inputRef.current?.focus())
-    }
-  }, [open])
-
-  useEffect(() => setActiveIndex(0), [query])
-
-  if (!open) return null
+    requestAnimationFrame(() => inputRef.current?.focus())
+  }, [])
 
   const runRow = (row: Row) => {
     if (row.kind === 'new') onNew()
@@ -121,7 +111,10 @@ export function SearchDialog({
           <Input
             ref={inputRef}
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value)
+              setActiveIndex(0)
+            }}
             placeholder="Search chats…"
             className="h-12 border-0 bg-transparent px-0 text-base shadow-none focus-visible:ring-0"
           />
