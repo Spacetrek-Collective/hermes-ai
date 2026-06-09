@@ -1,6 +1,6 @@
 # Hermes AI
 
-AI live-chat with a **Live2D** character that speaks replies with synced mouth movement (lip-sync). Streaming text from a Hermes agent → client-side TTS → audio drives the model's mouth.
+AI live-chat with a **Live2D** character that speaks replies with synced mouth movement (lip-sync). Streaming text from a Hermes agent → per-sentence TTS → audio drives the model's mouth in real time.
 
 ![status](https://img.shields.io/badge/status-WIP-orange)
 
@@ -8,13 +8,14 @@ AI live-chat with a **Live2D** character that speaks replies with synced mouth m
 
 - 🎭 **Live2D model** rendered with PixiJS v7 + [`pixi-live2d-display-lipsyncpatch`](https://github.com/RaSan147/pixi-live2d-display)
 - 👄 **Lip-sync** — TTS audio amplitude drives `ParamMouthOpenY`
-- 🗣️ **Client-side TTS** behind a swappable provider (Edge TTS now, MiniMax later)
+- 🗣️ **Edge TTS** via Vite Node middleware proxy — free, no API key, female voice (`en-US-JennyNeural`), works in every browser
 - 🎙️ **Speech-to-text** — free, key-less voice input via the browser Web Speech API
-- 💬 **Streaming chat** over SSE, with a sentence-chunked speak queue (audio starts before the full reply finishes)
+- 💬 **Streaming chat** over SSE — sentences synthesized eagerly in parallel, played in order (first audio fires ~1s after first sentence, not after full reply)
 - 🖐️ **Tap interaction** — touch head/body to trigger motions + expressions
 - 🗂️ **Multiple conversations** (ChatGPT/Claude-style) persisted in `localStorage`
 - 🔍 **Command-palette search** (`Cmd`/`Ctrl`+`K`) with date grouping + keyboard nav; rename/delete chats
 - 🌸 **Moe-pink** accent theme (light + dark)
+- 🔤 **Rubik** font
 - 📱 Responsive — overlay chat panel + collapsible drawer sidebar
 
 ## Tech stack
@@ -23,8 +24,9 @@ AI live-chat with a **Live2D** character that speaks replies with synced mouth m
 |---|---|
 | Framework | React 19 + Vite + TypeScript |
 | Styling | Tailwind v4 + shadcn/ui (Base UI primitives) |
+| Font | Rubik (Google Fonts) |
 | Live2D | PixiJS **v7** (pinned), `pixi-live2d-display-lipsyncpatch` (Cubism 4) |
-| TTS | `edge-tts-universal` (browser) |
+| TTS | `edge-tts-universal` via Vite Node middleware (dev) / `VITE_TTS_PROXY` (prod) |
 | STT | Web Speech API (browser-native) |
 | Runtime | Bun |
 
@@ -34,7 +36,7 @@ AI live-chat with a **Live2D** character that speaks replies with synced mouth m
 
 ```bash
 bun install
-cp .env.example .env   # then edit values
+cp .env.example .env   # edit values as needed
 bun dev
 ```
 
@@ -45,13 +47,18 @@ Open http://localhost:5173.
 | Var | Description | Default |
 |---|---|---|
 | `VITE_HERMES_URL` | Hermes agent SSE chat endpoint (POST) | `http://localhost:8000/chat` |
+| `VITE_HERMES_MOCK` | Stream canned reply locally (no agent needed) | `false` |
 | `VITE_MODEL_URL` | Live2D `.model3.json` entry | bundled Haru sample |
-| `VITE_TTS_PROVIDER` | `edge` \| `minimax` | `edge` |
-| `VITE_EDGE_TTS_VOICE` | Edge TTS voice id | `en-US-AvaNeural` |
+| `VITE_EDGE_TTS_VOICE` | Edge TTS voice id | `en-US-JennyNeural` |
+| `VITE_TTS_PROXY` | Production `/api/tts` endpoint (Vite middleware is dev-only) | — |
 | `VITE_STT_LANG` | Speech-to-text language (Web Speech API) | browser language |
 
 > 🎙️ STT needs **HTTPS** (or `localhost`) + mic permission, and runs on Chromium/Safari.
 > The mic button auto-hides where the Web Speech API is unavailable (e.g. Firefox).
+
+### Production TTS
+
+The Vite middleware (`vite-plugin-edge-tts.ts`) only runs in dev. For production, deploy a `/api/tts?voice=…&text=…` endpoint (Node, Cloudflare Worker, etc.) using `edge-tts-universal`, then set `VITE_TTS_PROXY` to its URL.
 
 ## Hermes agent contract
 
@@ -79,15 +86,21 @@ src/
     Live2DStage.tsx        Pixi app + model, imperative speak/expression/motion
     ChatPanel.tsx          message list + composer (shadcn)
     ConversationSidebar.tsx drawer: list, search, rename, delete
+    SearchDialog.tsx       command-palette search with date groups + keyboard nav
     ui/                    shadcn (Base UI) primitives
   hooks/
-    useHermesChat.ts       SSE stream → text + TTS lip-sync queue
+    useHermesChat.ts       SSE stream → per-sentence TTS queue → lip-sync
     useConversations.ts    multi-conversation state + localStorage
-  tts/                     TtsProvider interface + Edge TTS impl
-  lib/conversations.ts     storage CRUD
+    useSpeechRecognition.ts Web Speech API STT
+  tts/
+    types.ts               TtsProvider interface
+    edgeProxyTts.ts        Edge TTS via /api/tts proxy
+    index.ts               provider factory
+  lib/conversations.ts     localStorage CRUD
 public/
   live2dcubismcore.min.js  Cubism Core runtime (loaded globally in index.html)
   models/haru/             sample Cubism 4 model
+vite-plugin-edge-tts.ts    dev middleware: runs edge-tts-universal in Node
 docs/PRD.md                full product/requirements doc
 ```
 
@@ -101,8 +114,7 @@ case 'minimax':
   break
 ```
 
-`synthesize(text)` must return an object-URL of playable audio; the speak queue
-revokes it after playback.
+`synthesize(text)` must return `{ url: string }` where `url` is a playable object-URL; the speak queue revokes it after playback.
 
 ## Build
 
