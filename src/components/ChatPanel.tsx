@@ -1,20 +1,21 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { ChevronDown, Send, Square } from 'lucide-react'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { cn } from '@/lib/utils'
-import type { ChatMessage } from '@/types/hermes'
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { ChevronDown, Mic, Send, Square } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import { cn } from "@/lib/utils";
+import type { ChatMessage } from "@/types/hermes";
 
 interface ChatPanelProps {
-  messages: ChatMessage[]
-  isStreaming: boolean
-  isSpeaking: boolean
-  error: string | null
-  onSend: (text: string) => void
-  onStop: () => void
+  messages: ChatMessage[];
+  isStreaming: boolean;
+  isSpeaking: boolean;
+  error: string | null;
+  onSend: (text: string) => void;
+  onStop: () => void;
 }
 
 export function ChatPanel({
@@ -25,30 +26,33 @@ export function ChatPanel({
   onSend,
   onStop,
 }: ChatPanelProps) {
-  const [draft, setDraft] = useState('')
-  const [collapsed, setCollapsed] = useState(false)
-  const viewportRef = useRef<HTMLDivElement>(null)
+  const [draft, setDraft] = useState("");
+  const [collapsed, setCollapsed] = useState(false);
+  const viewportRef = useRef<HTMLDivElement>(null);
+
+  const speech = useSpeechRecognition({ onTranscript: setDraft });
 
   useEffect(() => {
-    const vp = viewportRef.current
-    if (vp) vp.scrollTop = vp.scrollHeight
-  }, [messages, collapsed])
+    const vp = viewportRef.current;
+    if (vp) vp.scrollTop = vp.scrollHeight;
+  }, [messages, collapsed]);
 
   const submit = (e: FormEvent) => {
-    e.preventDefault()
-    if (!draft.trim() || isStreaming) return
-    onSend(draft)
-    setDraft('')
-  }
+    e.preventDefault();
+    if (!draft.trim() || isStreaming) return;
+    if (speech.listening) speech.stop();
+    onSend(draft);
+    setDraft("");
+  };
 
   return (
     <Card
       className={cn(
-        'flex w-full flex-col overflow-hidden bg-card/70 backdrop-blur-xl',
-        'rounded-b-none rounded-t-2xl sm:rounded-xl',
+        "flex w-full flex-col overflow-hidden bg-card/70 backdrop-blur-xl",
+        "rounded-b-none rounded-t-2xl sm:rounded-xl",
         collapsed
-          ? 'h-auto'
-          : 'h-[58dvh] sm:h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-2rem)]',
+          ? "h-auto"
+          : "h-[58dvh] sm:h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-2rem)]",
       )}
     >
       <header className="flex items-center justify-between border-b px-4 py-3">
@@ -56,29 +60,29 @@ export function ChatPanel({
           <span className="text-sm font-semibold">Hermes</span>
           <span
             className={cn(
-              'inline-block size-2 rounded-full',
+              "inline-block size-2 rounded-full",
               isSpeaking
-                ? 'animate-pulse bg-primary'
+                ? "animate-pulse bg-primary"
                 : isStreaming
-                  ? 'animate-pulse bg-amber-400'
-                  : 'bg-muted-foreground/40',
+                  ? "animate-pulse bg-amber-400"
+                  : "bg-muted-foreground/40",
             )}
           />
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">
-            {isSpeaking ? 'speaking…' : isStreaming ? 'thinking…' : 'online'}
+            {isSpeaking ? "speaking…" : isStreaming ? "thinking…" : "online"}
           </span>
           <Button
             type="button"
             size="icon"
             variant="ghost"
             className="size-7"
-            aria-label={collapsed ? 'Expand chat' : 'Collapse chat'}
+            aria-label={collapsed ? "Expand chat" : "Collapse chat"}
             onClick={() => setCollapsed((c) => !c)}
           >
             <ChevronDown
-              className={cn('transition-transform', collapsed && 'rotate-180')}
+              className={cn("transition-transform", collapsed && "rotate-180")}
             />
           </Button>
         </div>
@@ -86,66 +90,90 @@ export function ChatPanel({
 
       {!collapsed && (
         <>
-      <ScrollArea viewportRef={viewportRef} className="flex-1">
-        <div className="flex flex-col gap-4 p-4">
-          {messages.length === 0 && (
-            <p className="mt-8 text-center text-sm text-muted-foreground">
-              Say hello to start the conversation.
-            </p>
+          <ScrollArea viewportRef={viewportRef} className="flex-1">
+            <div className="flex flex-col gap-4 p-4">
+              {messages.length === 0 && (
+                <p className="mt-8 text-center text-sm text-muted-foreground">
+                  Say hello to start the conversation.
+                </p>
+              )}
+              {messages.map((m) => (
+                <MessageBubble key={m.id} message={m} />
+              ))}
+            </div>
+          </ScrollArea>
+
+          {error && (
+            <p className="px-4 py-2 text-xs text-destructive">{error}</p>
           )}
-          {messages.map((m) => (
-            <MessageBubble key={m.id} message={m} />
-          ))}
-        </div>
-      </ScrollArea>
 
-      {error && (
-        <p className="px-4 py-2 text-xs text-destructive">{error}</p>
-      )}
-
-      <form onSubmit={submit} className="flex items-center gap-2 border-t p-3">
-        <Input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder="Type a message…"
-          disabled={isStreaming}
-          autoFocus
-        />
-        {isStreaming ? (
-          <Button type="button" size="icon" variant="secondary" onClick={onStop}>
-            <Square className="fill-current" />
-          </Button>
-        ) : (
-          <Button type="submit" size="icon" disabled={!draft.trim()}>
-            <Send />
-          </Button>
-        )}
-      </form>
+          <form
+            onSubmit={submit}
+            className="flex items-center gap-2 border-t p-3"
+          >
+            <Input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder={speech.listening ? "Listening…" : "Type a message…"}
+              disabled={isStreaming}
+              autoFocus
+            />
+            {speech.supported && !isStreaming && (
+              <Button
+                type="button"
+                size="icon"
+                variant={speech.listening ? "default" : "secondary"}
+                aria-label={
+                  speech.listening ? "Stop dictation" : "Start dictation"
+                }
+                onClick={speech.toggle}
+                className={cn(speech.listening && "animate-pulse")}
+              >
+                <Mic />
+              </Button>
+            )}
+            {isStreaming ? (
+              <Button
+                type="button"
+                size="icon"
+                variant="secondary"
+                onClick={onStop}
+              >
+                <Square className="fill-current" />
+              </Button>
+            ) : (
+              <Button type="submit" size="icon" disabled={!draft.trim()}>
+                <Send />
+              </Button>
+            )}
+          </form>
         </>
       )}
     </Card>
-  )
+  );
 }
 
 function MessageBubble({ message }: { message: ChatMessage }) {
-  const isUser = message.role === 'user'
+  const isUser = message.role === "user";
   return (
-    <div className={cn('flex gap-2', isUser && 'flex-row-reverse')}>
+    <div className={cn("flex gap-2", isUser && "flex-row-reverse")}>
       <Avatar>
-        <AvatarFallback className={cn(isUser && 'bg-primary text-primary-foreground')}>
-          {isUser ? 'You' : 'H'}
+        <AvatarFallback
+          className={cn(isUser && "bg-primary text-primary-foreground")}
+        >
+          {isUser ? "You" : "H"}
         </AvatarFallback>
       </Avatar>
       <div
         className={cn(
-          'max-w-[80%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap',
+          "max-w-[80%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap",
           isUser
-            ? 'rounded-tr-sm bg-primary text-primary-foreground'
-            : 'rounded-tl-sm bg-muted text-foreground',
+            ? "rounded-tr-sm bg-primary text-primary-foreground"
+            : "rounded-tl-sm bg-muted text-foreground",
         )}
       >
-        {message.content || (message.streaming ? '…' : '')}
+        {message.content || (message.streaming ? "…" : "")}
       </div>
     </div>
-  )
+  );
 }
