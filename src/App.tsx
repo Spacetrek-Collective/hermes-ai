@@ -106,6 +106,7 @@ function App() {
           ref={liveRef}
           model={activeModel}
           className="absolute inset-0 sm:right-[380px]"
+          onHit={(area) => console.log(`[App] Tapped on ${area}`)}
         />
 
         <Button
