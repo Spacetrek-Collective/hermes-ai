@@ -7,7 +7,9 @@ AI live-chat with a **Live2D** character. Streams replies from an OpenAI-compati
 ## Features
 
 - 🎭 **Live2D model** rendered with PixiJS v7 + [`pixi-live2d-display-lipsyncpatch`](https://github.com/RaSan147/pixi-live2d-display)
-- 🖐️ **Tap interaction** — touch head/body to trigger motions + expressions
+- 🔀 **Model switcher** — swap characters at runtime, persisted to `localStorage`
+- 😊 **Mood expressions** — AI response triggers character expressions via `[MOOD:*]` tags
+- 🖐️ **Tap interaction** — tap the character to trigger random expressions
 - 💬 **Streaming chat** via OpenAI-compatible `/v1/chat/completions` SSE with full message history
 - 📝 **Markdown rendering** in assistant messages (bold, italic, code, lists, links)
 - 🎙️ **Speech-to-text** — free, key-less voice input via the browser Web Speech API
@@ -48,9 +50,19 @@ Open http://localhost:7200.
 | `VITE_HERMES_API_KEY` | Bearer token for the API | — |
 | `VITE_HERMES_MODEL` | Model ID to pass in requests | `hermes-agent` |
 | `VITE_HERMES_MOCK` | Stream a canned reply locally (no API needed) | `false` |
-| `VITE_MODEL_URL` | Live2D `.model3.json` entry | bundled Haru sample |
 
 > 🎙️ STT needs **HTTPS** (or `localhost`) + mic permission. The mic button auto-hides where the Web Speech API is unavailable (e.g. Firefox).
+
+## Models
+
+Character models live in `public/models/`. Each model is registered in `src/lib/models.ts` with its mood expression mapping and tap expressions. The active model is persisted in `localStorage` under `hermes:model`.
+
+To add a new model:
+1. Drop the Cubism 4 model folder into `public/models/`
+2. Add expressions to the `.model3.json` `FileReferences.Expressions` array
+3. Register it in `src/lib/models.ts` with mood and tap expression names
+
+Supported moods: `happy`, `sad`, `surprised`, `angry`, `neutral`, `embarrassed`.
 
 ## API contract
 
@@ -69,19 +81,22 @@ Any OpenAI-compatible backend works out of the box.
 ```
 src/
   components/
-    Live2DStage.tsx          Pixi app + model, tap reactions
-    ChatPanel.tsx            message list + composer + Markdown renderer
+    Live2DStage.tsx          Pixi app + model, tap/mood reactions
+    ChatPanel.tsx            message list + composer + model switcher
     ConversationSidebar.tsx  drawer: list, search, rename, delete
     SearchDialog.tsx         command-palette with date groups + keyboard nav
     ui/                      shadcn (Base UI) primitives
   hooks/
-    useHermesChat.ts         SSE stream → message state
+    useHermesChat.ts         SSE stream → message state + mood detection
     useConversations.ts      multi-conversation state + localStorage
     useSpeechRecognition.ts  Web Speech API STT
-  lib/conversations.ts       localStorage CRUD
+  lib/
+    models.ts                model registry + per-model expression config
+    mood.ts                  mood type, keyword detector, system prompt
+    conversations.ts         localStorage CRUD
 public/
   live2dcubismcore.min.js    Cubism Core runtime (loaded globally in index.html)
-  models/haru/               sample Cubism 4 model
+  models/                    Cubism 4 character models
 ```
 
 ## Build
@@ -93,9 +108,5 @@ bun run preview
 
 ## Licensing / attribution
 
-This repo bundles third-party Live2D assets for convenience:
-
 - **Cubism Core** (`public/live2dcubismcore.min.js`) — © Live2D Inc., distributed under the [Live2D Proprietary Software License](https://www.live2d.com/eula/live2d-proprietary-software-license-agreement_en.html).
-- **Haru sample model** (`public/models/haru/`) — © Live2D Inc., [Free Material License](https://www.live2d.com/eula/live2d-free-material-license-agreement_en.html).
-
-Review those terms before using commercially. To ship your own model, drop it in `public/models/` and point `VITE_MODEL_URL` at it.
+- Character models in `public/models/` are subject to their respective authors' terms. Review before commercial use.
