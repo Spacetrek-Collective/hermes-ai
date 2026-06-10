@@ -4,15 +4,18 @@ import { Live2DStage } from "@/components/Live2DStage";
 import { ChatPanel } from "@/components/ChatPanel";
 import { ConversationSidebar } from "@/components/ConversationSidebar";
 import { SearchDialog } from "@/components/SearchDialog";
+import { LoginScreen } from "@/components/LoginScreen";
 import { Button } from "@/components/ui/button";
 import { useConversations } from "@/hooks/useConversations";
 import { useHermesChat } from "@/hooks/useHermesChat";
+import { useAuth } from "@/hooks/useAuth";
 
 const MODEL_URL =
   (import.meta.env.VITE_MODEL_URL as string | undefined) ??
   "/models/haru/haru_greeter_t03.model3.json";
 
 function App() {
+  const { authed, login } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -40,6 +43,10 @@ function App() {
   } = useConversations();
 
   const { isStreaming, error, sendMessage, stop } = useHermesChat(setMessages);
+
+  if (!authed) {
+    return <LoginScreen onLogin={login} />;
+  }
 
   return (
     <div className="relative h-dvh w-screen overflow-hidden">
