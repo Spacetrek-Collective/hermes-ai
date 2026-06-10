@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { cn } from "@/lib/utils";
+import { MOOD_TAG_RE } from "@/lib/mood";
 import type { ChatMessage } from "@/types/hermes";
 import type { ModelConfig } from "@/lib/models";
 import type { TTSProvider } from "@/lib/tts";
@@ -240,6 +241,7 @@ export function ChatPanel({
 
 function MessageBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === "user";
+  const displayContent = message.content.replace(MOOD_TAG_RE, "");
   return (
     <div className={cn("flex gap-2", isUser && "flex-row-reverse")}>
       <Avatar>
@@ -258,7 +260,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         )}
       >
         {isUser ? (
-          message.content || (message.streaming ? "…" : "")
+          displayContent || (message.streaming ? "…" : "")
         ) : (
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
@@ -297,7 +299,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
               ),
             }}
           >
-            {message.content || (message.streaming ? "…" : "")}
+            {displayContent || (message.streaming ? "…" : "")}
           </ReactMarkdown>
         )}
       </div>

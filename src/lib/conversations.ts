@@ -1,4 +1,5 @@
 import type { ChatMessage, Conversation } from "@/types/hermes";
+import { MOOD_TAG_RE } from "@/lib/mood";
 
 const STORAGE_KEY = "hermes:conversations";
 const ACTIVE_KEY = "hermes:active";
@@ -32,7 +33,10 @@ export function loadConversations(): Conversation[] {
     if (!Array.isArray(parsed)) return [];
     return parsed.map((c) => ({
       ...c,
-      messages: (c.messages ?? []).map(({ streaming: _s, ...m }) => m),
+      messages: (c.messages ?? []).map(({ streaming: _s, ...m }) => ({
+        ...m,
+        content: m.content.replace(MOOD_TAG_RE, "").trim(),
+      })),
     }));
   } catch {
     return [];
