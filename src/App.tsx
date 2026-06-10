@@ -1,33 +1,33 @@
-import { useEffect, useRef, useState } from 'react'
-import { Menu } from 'lucide-react'
-import { Live2DStage, type Live2DHandle } from '@/components/Live2DStage'
-import { ChatPanel } from '@/components/ChatPanel'
-import { ConversationSidebar } from '@/components/ConversationSidebar'
-import { SearchDialog } from '@/components/SearchDialog'
-import { Button } from '@/components/ui/button'
-import { useConversations } from '@/hooks/useConversations'
-import { useHermesChat } from '@/hooks/useHermesChat'
+import { useEffect, useRef, useState } from "react";
+import { Menu } from "lucide-react";
+import { Live2DStage, type Live2DHandle } from "@/components/Live2DStage";
+import { ChatPanel } from "@/components/ChatPanel";
+import { ConversationSidebar } from "@/components/ConversationSidebar";
+import { SearchDialog } from "@/components/SearchDialog";
+import { Button } from "@/components/ui/button";
+import { useConversations } from "@/hooks/useConversations";
+import { useHermesChat } from "@/hooks/useHermesChat";
 
 const MODEL_URL =
   (import.meta.env.VITE_MODEL_URL as string | undefined) ??
-  '/models/haru/haru_greeter_t03.model3.json'
+  "/models/haru/haru_greeter_t03.model3.json";
 
 function App() {
-  const live2dRef = useRef<Live2DHandle>(null)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [searchOpen, setSearchOpen] = useState(false)
+  const live2dRef = useRef<Live2DHandle>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // Cmd/Ctrl+K opens the search palette.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault()
-        setSearchOpen((o) => !o)
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearchOpen((o) => !o);
       }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const {
     conversations,
@@ -38,22 +38,22 @@ function App() {
     selectChat,
     renameChat,
     deleteChat,
-  } = useConversations()
+  } = useConversations();
 
   const { isStreaming, isSpeaking, error, sendMessage, stop } = useHermesChat(
     live2dRef,
     setMessages,
-  )
+  );
 
   return (
-    <div className="relative h-[100dvh] w-screen overflow-hidden">
+    <div className="relative h-dvh w-screen overflow-hidden">
       <ConversationSidebar
         conversations={conversations}
         activeId={activeId}
         onSelect={selectChat}
         onNew={() => {
-          newChat()
-          setSidebarOpen(false)
+          newChat();
+          setSidebarOpen(false);
         }}
         onDelete={deleteChat}
         onRename={renameChat}
@@ -67,17 +67,17 @@ function App() {
           conversations={conversations}
           onClose={() => setSearchOpen(false)}
           onSelect={(id) => {
-            selectChat(id)
-            setSidebarOpen(false)
+            selectChat(id);
+            setSidebarOpen(false);
           }}
           onNew={() => {
-            newChat()
-            setSidebarOpen(false)
+            newChat();
+            setSidebarOpen(false);
           }}
         />
       )}
 
-      <main className="relative h-full w-full overflow-hidden bg-gradient-to-b from-background to-secondary">
+      <main className="relative h-full w-full overflow-hidden bg-linear-to-b from-background to-secondary">
         <Live2DStage
           ref={live2dRef}
           modelUrl={MODEL_URL}
@@ -108,7 +108,7 @@ function App() {
         </div>
       </main>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

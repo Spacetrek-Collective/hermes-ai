@@ -10,13 +10,18 @@ import type { Live2DHandle } from "@/components/Live2DStage";
 import { getTts } from "@/tts";
 import type { ChatMessage } from "@/types/hermes";
 
-const HERMES_URL =
+const HERMES_BASE =
   (import.meta.env.VITE_HERMES_URL as string | undefined) ??
-  "http://localhost:8000/chat";
+  "http://localhost:8642";
+
+const HERMES_API_KEY =
+  (import.meta.env.VITE_HERMES_API_KEY as string | undefined) ?? "";
+
+const HERMES_MODEL =
+  (import.meta.env.VITE_HERMES_MODEL as string | undefined) ?? "hermes-agent";
 
 const MOCK =
-  (import.meta.env.VITE_HERMES_MOCK as string | undefined) === "true" ||
-  HERMES_URL === "mock";
+  (import.meta.env.VITE_HERMES_MOCK as string | undefined) === "true";
 
 const MOCK_REPLIES = [
   "Hi there! I'm Hermes, your Live2D assistant. It's lovely to meet you!",
@@ -53,12 +58,21 @@ export function useHermesChat(
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const messagesRef = useRef<ChatMessage[]>([]);
 
-  // Serializes playback order.
   const speakQueue = useRef<Promise<void>>(Promise.resolve());
-  // Tracks how many chunks are pending (in-flight synthesis OR queued playback).
-  // isSpeaking stays true until ALL chunks finish.
   const pendingSpeak = useRef(0);
+
+  const syncMessages = useCallback(
+    (updater: SetStateAction<ChatMessage[]>) => {
+      setMessages((prev) => {
+        const next = typeof updater === "function" ? updater(prev) : updater;
+        messagesRef.current = next;
+        return next;
+      });
+    },
+    [setMessages],
+  );
 
   const enqueueSpeak = useCallback(
     (text: string) => {
@@ -115,13 +129,13 @@ export function useHermesChat(
 
   const appendToAssistant = useCallback(
     (id: string, chunk: string) => {
-      setMessages((prev) =>
+      syncMessages((prev) =>
         prev.map((m) =>
           m.id === id ? { ...m, content: m.content + chunk } : m,
         ),
       );
     },
-    [setMessages],
+    [syncMessages],
   );
 
   const sendMessage = useCallback(
@@ -132,7 +146,7 @@ export function useHermesChat(
       setError(null);
       const userMsg: ChatMessage = { id: uid(), role: "user", content: prompt };
       const assistantId = uid();
-      setMessages((prev) => [
+      syncMessages((prev) => [
         ...prev,
         userMsg,
         { id: assistantId, role: "assistant", content: "", streaming: true },
@@ -168,15 +182,28 @@ export function useHermesChat(
           return;
         }
 
-        const res = await fetch(HERMES_URL, {
+        // Build history: all messages except the blank assistant placeholder.
+        const history = messagesRef.current
+          .filter((m) => m.id !== assistantId)
+          .map(({ role, content }) => ({ role, content }));
+
+        const res = await fetch(`${HERMES_BASE}/v1/chat/completions`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Accept: "text/event-stream",
+            ...(HERMES_API_KEY
+              ? { Authorization: `Bearer ${HERMES_API_KEY}` }
+              : {}),
           },
-          body: JSON.stringify({ prompt }),
+          body: JSON.stringify({
+            model: HERMES_MODEL,
+            messages: history,
+            stream: true,
+          }),
           signal: controller.signal,
         });
+
         if (!res.ok || !res.body) {
           throw new Error(`Hermes responded ${res.status}`);
         }
@@ -194,30 +221,21 @@ export function useHermesChat(
           while ((sep = sseBuffer.indexOf("\n\n")) !== -1) {
             const record = sseBuffer.slice(0, sep);
             sseBuffer = sseBuffer.slice(sep + 2);
-            let eventType = "token";
-            const dataLines: string[] = [];
             for (const line of record.split("\n")) {
-              if (line.startsWith("event:")) eventType = line.slice(6).trim();
-              else if (line.startsWith("data:"))
-                dataLines.push(line.slice(5).trim());
+              if (!line.startsWith("data:")) continue;
+              const data = line.slice(5).trim();
+              if (data === "[DONE]") break;
+              try {
+                const chunk = JSON.parse(data);
+                const delta = chunk?.choices?.[0]?.delta?.content;
+                if (typeof delta === "string") handleToken(delta);
+              } catch {
+                /* ignore malformed chunks */
+              }
             }
-            const data = dataLines.join("\n");
-            if (eventType === "done" || data === "[DONE]") {
-              sseBuffer = "";
-              break;
-            }
-            let tok = data;
-            try {
-              const parsed = JSON.parse(data);
-              tok = typeof parsed === "string" ? parsed : (parsed.text ?? "");
-            } catch {
-              /* raw string token */
-            }
-            handleToken(tok);
           }
         }
 
-        // Flush remaining buffer (incomplete sentence or no terminal punct).
         if (sentenceBuffer.trim()) enqueueSpeak(sentenceBuffer);
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
@@ -227,14 +245,14 @@ export function useHermesChat(
       } finally {
         setIsStreaming(false);
         abortRef.current = null;
-        setMessages((prev) =>
+        syncMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId ? { ...m, streaming: false } : m,
           ),
         );
       }
     },
-    [appendToAssistant, enqueueSpeak, isStreaming, setMessages],
+    [appendToAssistant, enqueueSpeak, isStreaming, syncMessages],
   );
 
   const stop = useCallback(() => {
