@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { ChevronDown, Mic, Send, Square } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -8,6 +10,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { cn } from "@/lib/utils";
 import type { ChatMessage } from "@/types/hermes";
+
+const AI_NAME =
+  (import.meta.env.VITE_AI_NAME as string | undefined) ?? "Hermes";
 
 interface ChatPanelProps {
   messages: ChatMessage[];
@@ -57,7 +62,7 @@ export function ChatPanel({
     >
       <header className="flex items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold">Hermes</span>
+          <span className="text-sm font-semibold">{AI_NAME}</span>
           <span
             className={cn(
               "inline-block size-2 rounded-full",
@@ -166,13 +171,38 @@ function MessageBubble({ message }: { message: ChatMessage }) {
       </Avatar>
       <div
         className={cn(
-          "max-w-[80%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap",
+          "max-w-[80%] rounded-2xl px-3 py-2 text-sm",
           isUser
-            ? "rounded-tr-sm bg-primary text-primary-foreground"
+            ? "rounded-tr-sm bg-primary text-primary-foreground whitespace-pre-wrap"
             : "rounded-tl-sm bg-muted text-foreground",
         )}
       >
-        {message.content || (message.streaming ? "…" : "")}
+        {isUser ? (
+          message.content || (message.streaming ? "…" : "")
+        ) : (
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              p: ({ children }) => <p className="mb-1 last:mb-0">{children}</p>,
+              strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+              em: ({ children }) => <em className="italic">{children}</em>,
+              code: ({ children }) => (
+                <code className="rounded bg-black/20 px-1 py-0.5 font-mono text-xs">{children}</code>
+              ),
+              pre: ({ children }) => (
+                <pre className="my-1 overflow-x-auto rounded bg-black/20 p-2 font-mono text-xs">{children}</pre>
+              ),
+              ul: ({ children }) => <ul className="mb-1 ml-4 list-disc">{children}</ul>,
+              ol: ({ children }) => <ol className="mb-1 ml-4 list-decimal">{children}</ol>,
+              li: ({ children }) => <li className="mb-0.5">{children}</li>,
+              a: ({ href, children }) => (
+                <a href={href} target="_blank" rel="noreferrer" className="underline opacity-80 hover:opacity-100">{children}</a>
+              ),
+            }}
+          >
+            {message.content || (message.streaming ? "…" : "")}
+          </ReactMarkdown>
+        )}
       </div>
     </div>
   );
