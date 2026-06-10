@@ -8,6 +8,8 @@ Live2DModel.registerTicker(Ticker)
 
 export interface Live2DStageHandle {
   triggerMood: (mood: Mood) => void
+  speak: (url: string, onFinish?: () => void) => void
+  stopSpeaking: () => void
 }
 
 interface Live2DStageProps {
@@ -35,6 +37,35 @@ export const Live2DStage = forwardRef<Live2DStageHandle, Live2DStageProps>(
         const expr = modelConfigRef.current.moodExpressions[mood]
         console.log('[Live2D] triggerMood', mood, expr)
         m.expression(expr)
+      },
+      speak(url: string, onFinish?: () => void) {
+        const m = modelRef.current
+        if (!m) {
+          console.warn('[Live2D] no model loaded, skipping speak')
+          onFinish?.()
+          return
+        }
+        console.log('[Live2D] speak()', url)
+        m.internalModel.motionManager
+          .speak(url, {
+            onFinish: () => {
+              console.log('[Live2D] speak finished')
+              onFinish?.()
+            },
+            onError: (e) => {
+              console.error('[Live2D] speak error:', e?.message || e)
+              onFinish?.()
+            },
+          })
+          .catch((e: Error) => {
+            console.error('[Live2D] speak promise rejected:', e?.message || e)
+            onFinish?.()
+          })
+      },
+      stopSpeaking() {
+        const m = modelRef.current
+        if (!m) return
+        m.internalModel.motionManager.stopSpeaking()
       },
     }))
 

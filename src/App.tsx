@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Menu } from "lucide-react";
 import { Live2DStage } from "@/components/Live2DStage";
 import type { Live2DStageHandle } from "@/components/Live2DStage";
@@ -10,7 +10,9 @@ import { Button } from "@/components/ui/button";
 import { useConversations } from "@/hooks/useConversations";
 import { useHermesChat } from "@/hooks/useHermesChat";
 import { useAuth } from "@/hooks/useAuth";
+import { useTTS } from "@/hooks/useTTS";
 import { MODELS, loadActiveModel, saveActiveModel } from "@/lib/models";
+import { TTS_PROVIDERS } from "@/lib/tts";
 import type { ModelConfig } from "@/lib/models";
 
 function App() {
@@ -42,9 +44,20 @@ function App() {
     deleteChat,
   } = useConversations();
 
+  const { config: ttsConfig, setConfig: setTTSConfig, speak, onSpeakEnd, isSpeaking: ttsSpeaking } = useTTS();
+
+  const handleTTSComplete = useCallback(
+    async (text: string) => {
+      const url = await speak(text);
+      if (url) liveRef.current?.speak(url, onSpeakEnd);
+    },
+    [speak, onSpeakEnd],
+  );
+
   const { isStreaming, error, sendMessage, stop } = useHermesChat(
     setMessages,
     (mood) => liveRef.current?.triggerMood(mood),
+    handleTTSComplete,
   );
 
   const handleSelectModel = (m: ModelConfig) => {
@@ -116,6 +129,12 @@ function App() {
               models={MODELS}
               activeModel={activeModel}
               onModelChange={handleSelectModel}
+              ttsEnabled={ttsConfig.enabled}
+              onTTSToggle={() => setTTSConfig({ enabled: !ttsConfig.enabled })}
+              ttsProviders={TTS_PROVIDERS}
+              activeTTSProvider={ttsConfig.provider}
+              onTTSProviderChange={(id) => setTTSConfig({ provider: id })}
+              isSpeaking={ttsSpeaking}
             />
           </div>
         </div>
