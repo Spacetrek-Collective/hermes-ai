@@ -17,7 +17,6 @@ const AI_NAME =
 interface ChatPanelProps {
   messages: ChatMessage[];
   isStreaming: boolean;
-  isSpeaking: boolean;
   error: string | null;
   onSend: (text: string) => void;
   onStop: () => void;
@@ -26,7 +25,6 @@ interface ChatPanelProps {
 export function ChatPanel({
   messages,
   isStreaming,
-  isSpeaking,
   error,
   onSend,
   onStop,
@@ -66,17 +64,15 @@ export function ChatPanel({
           <span
             className={cn(
               "inline-block size-2 rounded-full",
-              isSpeaking
-                ? "animate-pulse bg-primary"
-                : isStreaming
-                  ? "animate-pulse bg-amber-400"
-                  : "bg-muted-foreground/40",
+              isStreaming
+                ? "animate-pulse bg-amber-400"
+                : "bg-muted-foreground/40",
             )}
           />
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">
-            {isSpeaking ? "speaking…" : isStreaming ? "thinking…" : "online"}
+            {isStreaming ? "thinking…" : "online"}
           </span>
           <Button
             type="button"

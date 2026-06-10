@@ -3,11 +3,8 @@ import {
   useRef,
   useState,
   type Dispatch,
-  type RefObject,
   type SetStateAction,
 } from "react";
-import type { Live2DHandle } from "@/components/Live2DStage";
-import { getTts } from "@/tts";
 import type { ChatMessage } from "@/types/hermes";
 
 const HERMES_BASE =
@@ -35,33 +32,13 @@ const uid = () =>
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-// Extract complete sentences from buffer (requires punct + whitespace boundary).
-// Returns [sentences, remaining buffer].
-function extractSentences(buf: string): [string[], string] {
-  const sentences: string[] = [];
-  let rest = buf;
-  const re = /^(.*?[.!?。！？]["')\]]*)\s+/;
-  let m: RegExpMatchArray | null;
-  while ((m = rest.match(re)) !== null) {
-    const s = m[1].trim();
-    if (s) sentences.push(s);
-    rest = rest.slice(m[0].length);
-  }
-  return [sentences, rest];
-}
-
 export function useHermesChat(
-  live2dRef: RefObject<Live2DHandle | null>,
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>,
 ) {
   const [isStreaming, setIsStreaming] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const messagesRef = useRef<ChatMessage[]>([]);
-
-  const speakQueue = useRef<Promise<void>>(Promise.resolve());
-  const pendingSpeak = useRef(0);
 
   const syncMessages = useCallback(
     (updater: SetStateAction<ChatMessage[]>) => {
@@ -72,59 +49,6 @@ export function useHermesChat(
       });
     },
     [setMessages],
-  );
-
-  const enqueueSpeak = useCallback(
-    (text: string) => {
-      const clean = text.trim();
-      if (!clean) return;
-
-      // Kick off synthesis immediately — don't wait for the queue to drain.
-      const synthesisPromise = getTts().synthesize(clean);
-
-      pendingSpeak.current++;
-      if (pendingSpeak.current === 1) setIsSpeaking(true);
-
-      // Serialize playback: this chunk waits for previous to finish, then plays.
-      speakQueue.current = speakQueue.current.then(async () => {
-        try {
-          const { url } = await synthesisPromise; // likely already resolved
-          await new Promise<void>((resolve) => {
-            let settled = false;
-            const finish = () => {
-              if (settled) return;
-              settled = true;
-              clearTimeout(timer);
-              URL.revokeObjectURL(url);
-              resolve();
-            };
-            // Safety net: lib may never fire callbacks on autoplay block.
-            // Cap wait at audio duration + buffer, else 30s.
-            let timer = setTimeout(finish, 30_000);
-            const probe = new Audio(url);
-            probe.addEventListener("loadedmetadata", () => {
-              if (Number.isFinite(probe.duration)) {
-                clearTimeout(timer);
-                timer = setTimeout(finish, probe.duration * 1000 + 1500);
-              }
-            });
-            if (!live2dRef.current) return finish();
-            live2dRef.current.speak(url, {
-              resetExpression: true,
-              onFinish: finish,
-              onError: finish,
-            });
-          });
-        } catch (err) {
-          console.error("[tts] synthesize failed", err);
-          setError(`TTS failed: ${(err as Error).message}`);
-        } finally {
-          pendingSpeak.current--;
-          if (pendingSpeak.current === 0) setIsSpeaking(false);
-        }
-      });
-    },
-    [live2dRef],
   );
 
   const appendToAssistant = useCallback(
@@ -156,17 +80,6 @@ export function useHermesChat(
       const controller = new AbortController();
       abortRef.current = controller;
 
-      let sentenceBuffer = "";
-
-      const handleToken = (tok: string) => {
-        if (!tok) return;
-        appendToAssistant(assistantId, tok);
-        sentenceBuffer += tok;
-        const [sentences, rest] = extractSentences(sentenceBuffer);
-        sentenceBuffer = rest;
-        for (const s of sentences) enqueueSpeak(s);
-      };
-
       try {
         if (MOCK) {
           const reply =
@@ -175,14 +88,12 @@ export function useHermesChat(
             if (controller.signal.aborted) {
               throw new DOMException("aborted", "AbortError");
             }
-            handleToken(word);
+            appendToAssistant(assistantId, word);
             await delay(55);
           }
-          if (sentenceBuffer.trim()) enqueueSpeak(sentenceBuffer);
           return;
         }
 
-        // Build history: all messages except the blank assistant placeholder.
         const history = messagesRef.current
           .filter((m) => m.id !== assistantId)
           .map(({ role, content }) => ({ role, content }));
@@ -228,15 +139,13 @@ export function useHermesChat(
               try {
                 const chunk = JSON.parse(data);
                 const delta = chunk?.choices?.[0]?.delta?.content;
-                if (typeof delta === "string") handleToken(delta);
+                if (typeof delta === "string") appendToAssistant(assistantId, delta);
               } catch {
                 /* ignore malformed chunks */
               }
             }
           }
         }
-
-        if (sentenceBuffer.trim()) enqueueSpeak(sentenceBuffer);
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
           console.error("[hermes] stream failed", err);
@@ -252,13 +161,12 @@ export function useHermesChat(
         );
       }
     },
-    [appendToAssistant, enqueueSpeak, isStreaming, syncMessages],
+    [appendToAssistant, isStreaming, syncMessages],
   );
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
-    live2dRef.current?.stopSpeaking();
-  }, [live2dRef]);
+  }, []);
 
-  return { isStreaming, isSpeaking, error, sendMessage, stop };
+  return { isStreaming, error, sendMessage, stop };
 }

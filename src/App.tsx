@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Menu } from "lucide-react";
-import { Live2DStage, type Live2DHandle } from "@/components/Live2DStage";
+import { Live2DStage } from "@/components/Live2DStage";
 import { ChatPanel } from "@/components/ChatPanel";
 import { ConversationSidebar } from "@/components/ConversationSidebar";
 import { SearchDialog } from "@/components/SearchDialog";
@@ -13,7 +13,6 @@ const MODEL_URL =
   "/models/haru/haru_greeter_t03.model3.json";
 
 function App() {
-  const live2dRef = useRef<Live2DHandle>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -40,10 +39,7 @@ function App() {
     deleteChat,
   } = useConversations();
 
-  const { isStreaming, isSpeaking, error, sendMessage, stop } = useHermesChat(
-    live2dRef,
-    setMessages,
-  );
+  const { isStreaming, error, sendMessage, stop } = useHermesChat(setMessages);
 
   return (
     <div className="relative h-dvh w-screen overflow-hidden">
@@ -79,7 +75,6 @@ function App() {
 
       <main className="relative h-full w-full overflow-hidden bg-linear-to-b from-background to-secondary">
         <Live2DStage
-          ref={live2dRef}
           modelUrl={MODEL_URL}
           className="absolute inset-0"
         />
@@ -99,7 +94,6 @@ function App() {
             <ChatPanel
               messages={messages}
               isStreaming={isStreaming}
-              isSpeaking={isSpeaking}
               error={error}
               onSend={sendMessage}
               onStop={stop}
