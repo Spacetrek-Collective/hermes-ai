@@ -37,6 +37,34 @@ export const MODELS: ModelConfig[] = [
     },
     tapExpressions: ['哭', '害羞', '慌张', '白眼', '黑脸', '伞关闭'],
   },
+  {
+    id: 'camellya',
+    label: 'Camellya',
+    url: '/models/camellya/ดป.model3.json',
+    moodExpressions: {
+      happy:       'บฺมณ',
+      sad:         'มณบ์',
+      surprised:   'บฺมณ',
+      angry:       'มณบ์',
+      neutral:     'บฺมณ',
+      embarrassed: 'มณบ์',
+    },
+    tapExpressions: ['บฺมณ', 'มณบ์'],
+  },
+  {
+    id: 'tingyun',
+    label: 'Tingyun',
+    url: '/models/tingyun/停云.model3.json',
+    moodExpressions: {
+      happy:       '心心眼',
+      sad:         '脸黑',
+      surprised:   '尾巴',
+      angry:       '脸黑',
+      neutral:     '尾巴',
+      embarrassed: '脸红',
+    },
+    tapExpressions: ['心心眼', '脸红', '脸黑', '尾巴'],
+  },
 ]
 
 const STORAGE_KEY = 'hermes:model'

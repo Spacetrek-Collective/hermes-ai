@@ -1,14 +1,23 @@
 {
 	"Version": 3,
 	"FileReferences": {
-		"Moc": "椿.moc3",
+		"Moc": "ดป.moc3",
 		"Textures": [
-			"椿.4096/texture_00.png",
-			"椿.4096/texture_01.png",
-			"椿.4096/texture_02.png"
+			"ดป.4096/texture_00.png",
+			"ดป.4096/texture_01.png",
+			"ดป.4096/texture_02.png"
 		],
-		"Physics": "椿.physics3.json",
-		"DisplayInfo": "椿.cdi3.json"
+		"Physics": "ดป.physics3.json",
+		"DisplayInfo": "ดป.cdi3.json",
+		"Expressions": [
+			{ "Name": "บฺมณ", "File": "EXP3/บฺมณ.exp3.json" },
+			{ "Name": "มณบ์", "File": "EXP3/มณบ์.exp3.json" }
+		],
+		"Motions": {
+			"Idle": [
+				{ "File": "motions/idle.motion3.json", "FadeInTime": 0.5, "FadeOutTime": 0.5 }
+			]
+		}
 	},
 	"Groups": [
 		{
