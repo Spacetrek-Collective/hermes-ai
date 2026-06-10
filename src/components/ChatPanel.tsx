@@ -155,7 +155,7 @@ export function ChatPanel({
               : isStreaming
                 ? "thinking…"
                 : isSpeaking
-                  ? "generating voice…"
+                  ? "speaking…"
                   : "online"}
           </span>
           <Button
