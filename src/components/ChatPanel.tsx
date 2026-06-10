@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ChevronDown, Mic, Send, Square } from "lucide-react";
+import { ChevronDown, Mic, MicOff, Send, Square, Volume2 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -18,7 +18,7 @@ import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { cn } from "@/lib/utils";
 import type { ChatMessage } from "@/types/hermes";
 import type { ModelConfig } from "@/lib/models";
-
+import type { TTSProvider } from "@/lib/tts";
 
 interface ChatPanelProps {
   messages: ChatMessage[];
@@ -29,6 +29,12 @@ interface ChatPanelProps {
   models: ModelConfig[];
   activeModel: ModelConfig;
   onModelChange: (model: ModelConfig) => void;
+  ttsEnabled: boolean;
+  onTTSToggle: () => void;
+  ttsProviders: TTSProvider[];
+  activeTTSProvider: string;
+  onTTSProviderChange: (id: string) => void;
+  isSpeaking: boolean;
 }
 
 export function ChatPanel({
@@ -40,6 +46,12 @@ export function ChatPanel({
   models,
   activeModel,
   onModelChange,
+  ttsEnabled,
+  onTTSToggle,
+  ttsProviders,
+  activeTTSProvider,
+  onTTSProviderChange,
+  isSpeaking,
 }: ChatPanelProps) {
   const [draft, setDraft] = useState("");
   const [collapsed, setCollapsed] = useState(false);
@@ -92,6 +104,41 @@ export function ChatPanel({
               </SelectPopup>
             </SelectPositioner>
           </SelectRoot>
+          <SelectRoot
+            value={activeTTSProvider}
+            onValueChange={(id) => onTTSProviderChange(id as string)}
+          >
+            <SelectTrigger aria-label="Switch TTS provider" className="gap-1">
+              <Volume2 className="size-3.5" />
+              <span className="text-xs">
+                {ttsProviders.find((p) => p.id === activeTTSProvider)?.label ??
+                  activeTTSProvider}
+              </span>
+            </SelectTrigger>
+            <SelectPositioner>
+              <SelectPopup>
+                {ttsProviders.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.label}
+                  </SelectItem>
+                ))}
+              </SelectPopup>
+            </SelectPositioner>
+          </SelectRoot>
+          <Button
+            type="button"
+            size="icon"
+            variant={ttsEnabled ? "default" : "ghost"}
+            className={cn("size-7", isSpeaking && "animate-pulse")}
+            aria-label={ttsEnabled ? "Disable TTS" : "Enable TTS"}
+            onClick={onTTSToggle}
+          >
+            {ttsEnabled ? (
+              <Mic className="size-3.5" />
+            ) : (
+              <MicOff className="size-3.5 text-muted-foreground" />
+            )}
+          </Button>
           <span
             className={cn(
               "inline-block size-2 rounded-full",
@@ -103,7 +150,13 @@ export function ChatPanel({
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">
-            {isStreaming ? "thinking…" : "online"}
+            {isStreaming && isSpeaking
+              ? "thinking + voice…"
+              : isStreaming
+                ? "thinking…"
+                : isSpeaking
+                  ? "generating voice…"
+                  : "online"}
           </span>
           <Button
             type="button"

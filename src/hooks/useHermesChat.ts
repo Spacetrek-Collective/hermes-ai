@@ -38,10 +38,13 @@ const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export function useHermesChat(
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>,
   onMood?: (mood: Mood) => void,
+  onComplete?: (text: string) => void,
 ) {
   const onMoodRef = useRef(onMood);
+  const onCompleteRef = useRef(onComplete);
   useLayoutEffect(() => {
     onMoodRef.current = onMood;
+    onCompleteRef.current = onComplete;
   });
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -213,6 +216,8 @@ export function useHermesChat(
             m.id === assistantId ? { ...m, streaming: false } : m,
           ),
         );
+        const cleanText = fullResponse.replace(MOOD_TAG_RE, "").trim();
+        if (cleanText) onCompleteRef.current?.(cleanText);
       }
     },
     [appendToAssistant, isStreaming, syncMessages],
