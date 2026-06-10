@@ -4,8 +4,6 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-const AI_NAME = (import.meta.env.VITE_AI_NAME as string | undefined) ?? "Hermes";
-
 interface LoginScreenProps {
   onLogin: (username: string, password: string) => boolean;
 }
@@ -30,7 +28,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           <div className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
             <Lock className="size-5" />
           </div>
-          <h1 className="text-lg font-semibold">{AI_NAME}</h1>
+          <h1 className="text-lg font-semibold">Hermes AI</h1>
           <p className="text-sm text-muted-foreground">Sign in to continue</p>
         </div>
 

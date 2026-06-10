@@ -1,0 +1,34 @@
+{
+	"Version": 3,
+	"FileReferences": {
+		"Moc": "ดป.moc3",
+		"Textures": [
+			"ดป.4096/texture_00.png",
+			"ดป.4096/texture_01.png",
+			"ดป.4096/texture_02.png"
+		],
+		"Physics": "ดป.physics3.json",
+		"DisplayInfo": "ดป.cdi3.json",
+		"Expressions": [
+			{ "Name": "บฺมณ", "File": "EXP3/บฺมณ.exp3.json" },
+			{ "Name": "มณบ์", "File": "EXP3/มณบ์.exp3.json" }
+		],
+		"Motions": {
+			"Idle": [
+				{ "File": "motions/idle.motion3.json", "FadeInTime": 0.5, "FadeOutTime": 0.5 }
+			]
+		}
+	},
+	"Groups": [
+		{
+			"Target": "Parameter",
+			"Name": "EyeBlink",
+			"Ids": []
+		},
+		{
+			"Target": "Parameter",
+			"Name": "LipSync",
+			"Ids": []
+		}
+	]
+}

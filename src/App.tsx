@@ -10,18 +10,16 @@ import { Button } from "@/components/ui/button";
 import { useConversations } from "@/hooks/useConversations";
 import { useHermesChat } from "@/hooks/useHermesChat";
 import { useAuth } from "@/hooks/useAuth";
-
-const MODEL_URL =
-  (import.meta.env.VITE_MODEL_URL as string | undefined) ??
-  "/models/haru/haru_greeter_t03.model3.json";
+import { MODELS, loadActiveModel, saveActiveModel } from "@/lib/models";
+import type { ModelConfig } from "@/lib/models";
 
 function App() {
   const { authed, login } = useAuth();
   const liveRef = useRef<Live2DStageHandle>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [activeModel, setActiveModel] = useState<ModelConfig>(loadActiveModel);
 
-  // Cmd/Ctrl+K opens the search palette.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -48,6 +46,11 @@ function App() {
     setMessages,
     (mood) => liveRef.current?.triggerMood(mood),
   );
+
+  const handleSelectModel = (m: ModelConfig) => {
+    saveActiveModel(m.id);
+    setActiveModel(m);
+  };
 
   if (!authed) {
     return <LoginScreen onLogin={login} />;
@@ -88,8 +91,8 @@ function App() {
       <main className="relative h-full w-full overflow-hidden bg-linear-to-b from-background to-secondary">
         <Live2DStage
           ref={liveRef}
-          modelUrl={MODEL_URL}
-          className="absolute inset-0"
+          model={activeModel}
+          className="absolute inset-0 sm:right-[380px]"
         />
 
         <Button
@@ -110,6 +113,9 @@ function App() {
               error={error}
               onSend={sendMessage}
               onStop={stop}
+              models={MODELS}
+              activeModel={activeModel}
+              onModelChange={handleSelectModel}
             />
           </div>
         </div>
