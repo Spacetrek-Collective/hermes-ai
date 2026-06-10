@@ -92,7 +92,7 @@ function App() {
         <Live2DStage
           ref={liveRef}
           model={activeModel}
-          className="absolute inset-0"
+          className="absolute inset-0 sm:right-[380px]"
         />
 
         <Button
