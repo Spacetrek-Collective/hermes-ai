@@ -1,11 +1,14 @@
 import {
   useCallback,
+  useLayoutEffect,
   useRef,
   useState,
   type Dispatch,
   type SetStateAction,
 } from "react";
 import type { ChatMessage } from "@/types/hermes";
+import type { Mood } from "@/lib/mood";
+import { MOOD_TAG_RE, MOOD_SYSTEM_PROMPT, detectMood } from "@/lib/mood";
 
 const HERMES_BASE =
   (import.meta.env.VITE_HERMES_URL as string | undefined) ??
@@ -21,10 +24,10 @@ const MOCK =
   (import.meta.env.VITE_HERMES_MOCK as string | undefined) === "true";
 
 const MOCK_REPLIES = [
-  "Hi there! I'm Hermes, your Live2D assistant. It's lovely to meet you!",
-  "Sure thing! Let me think about that for a moment. Here is what I found.",
-  "Of course! The weather today looks bright and cheerful, perfect for coding.",
-  "Hello! I can speak out loud and move my mouth in sync. Pretty neat, right?",
+  "[MOOD:happy] Hi there! I'm Hermes, your Live2D assistant. It's lovely to meet you!",
+  "Sure thing! [MOOD:surprised] Let me think about that for a moment. Here is what I found.",
+  "[MOOD:neutral] Of course! The weather today looks bright and cheerful, perfect for coding.",
+  "Hello! [MOOD:happy] I can speak out loud and move my mouth in sync. Pretty neat, right?",
 ];
 
 const uid = () =>
@@ -34,7 +37,12 @@ const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export function useHermesChat(
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>,
+  onMood?: (mood: Mood) => void,
 ) {
+  const onMoodRef = useRef(onMood);
+  useLayoutEffect(() => {
+    onMoodRef.current = onMood;
+  });
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -80,6 +88,47 @@ export function useHermesChat(
       const controller = new AbortController();
       abortRef.current = controller;
 
+      // Buffer for partial [MOOD:...] tags that may span chunk boundaries
+      let tagBuf = "";
+      let moodTagFired = false;
+      let fullResponse = "";
+
+      const flushChunk = (raw: string) => {
+        tagBuf += raw;
+        fullResponse += raw;
+        tagBuf = tagBuf.replace(MOOD_TAG_RE, (_, mood: string) => {
+          moodTagFired = true;
+          onMoodRef.current?.(mood.toLowerCase() as Mood);
+          return "";
+        });
+        // Hold back a potential partial tag at the tail (max 15 chars)
+        const openIdx = tagBuf.lastIndexOf("[");
+        if (openIdx !== -1 && tagBuf.length - openIdx <= 15) {
+          appendToAssistant(assistantId, tagBuf.slice(0, openIdx));
+          tagBuf = tagBuf.slice(openIdx);
+        } else {
+          appendToAssistant(assistantId, tagBuf);
+          tagBuf = "";
+        }
+      };
+
+      const flushRemaining = () => {
+        if (tagBuf) {
+          appendToAssistant(
+            assistantId,
+            tagBuf.replace(MOOD_TAG_RE, (_, mood: string) => {
+              moodTagFired = true;
+              onMoodRef.current?.(mood.toLowerCase() as Mood);
+              return "";
+            }),
+          );
+          tagBuf = "";
+        }
+        if (!moodTagFired && fullResponse) {
+          onMoodRef.current?.(detectMood(fullResponse));
+        }
+      };
+
       try {
         if (MOCK) {
           const reply =
@@ -88,15 +137,19 @@ export function useHermesChat(
             if (controller.signal.aborted) {
               throw new DOMException("aborted", "AbortError");
             }
-            appendToAssistant(assistantId, word);
+            flushChunk(word);
             await delay(55);
           }
+          flushRemaining();
           return;
         }
 
-        const history = messagesRef.current
-          .filter((m) => m.id !== assistantId)
-          .map(({ role, content }) => ({ role, content }));
+        const history = [
+          { role: "system", content: MOOD_SYSTEM_PROMPT },
+          ...messagesRef.current
+            .filter((m) => m.id !== assistantId)
+            .map(({ role, content }) => ({ role, content })),
+        ];
 
         const res = await fetch(`${HERMES_BASE}/v1/chat/completions`, {
           method: "POST",
@@ -139,13 +192,14 @@ export function useHermesChat(
               try {
                 const chunk = JSON.parse(data);
                 const delta = chunk?.choices?.[0]?.delta?.content;
-                if (typeof delta === "string") appendToAssistant(assistantId, delta);
+                if (typeof delta === "string") flushChunk(delta);
               } catch {
                 /* ignore malformed chunks */
               }
             }
           }
         }
+        flushRemaining();
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
           console.error("[hermes] stream failed", err);

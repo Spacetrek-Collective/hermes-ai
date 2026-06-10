@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Menu } from "lucide-react";
 import { Live2DStage } from "@/components/Live2DStage";
+import type { Live2DStageHandle } from "@/components/Live2DStage";
 import { ChatPanel } from "@/components/ChatPanel";
 import { ConversationSidebar } from "@/components/ConversationSidebar";
 import { SearchDialog } from "@/components/SearchDialog";
@@ -16,6 +17,7 @@ const MODEL_URL =
 
 function App() {
   const { authed, login } = useAuth();
+  const liveRef = useRef<Live2DStageHandle>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -42,7 +44,10 @@ function App() {
     deleteChat,
   } = useConversations();
 
-  const { isStreaming, error, sendMessage, stop } = useHermesChat(setMessages);
+  const { isStreaming, error, sendMessage, stop } = useHermesChat(
+    setMessages,
+    (mood) => liveRef.current?.triggerMood(mood),
+  );
 
   if (!authed) {
     return <LoginScreen onLogin={login} />;
@@ -82,6 +87,7 @@ function App() {
 
       <main className="relative h-full w-full overflow-hidden bg-linear-to-b from-background to-secondary">
         <Live2DStage
+          ref={liveRef}
           modelUrl={MODEL_URL}
           className="absolute inset-0"
         />
