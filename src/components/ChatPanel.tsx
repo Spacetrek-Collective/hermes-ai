@@ -7,12 +7,18 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  SelectRoot,
+  SelectTrigger,
+  SelectPositioner,
+  SelectPopup,
+  SelectItem,
+} from "@/components/ui/select";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { cn } from "@/lib/utils";
 import type { ChatMessage } from "@/types/hermes";
+import type { ModelConfig } from "@/lib/models";
 
-const AI_NAME =
-  (import.meta.env.VITE_AI_NAME as string | undefined) ?? "Hermes";
 
 interface ChatPanelProps {
   messages: ChatMessage[];
@@ -20,6 +26,9 @@ interface ChatPanelProps {
   error: string | null;
   onSend: (text: string) => void;
   onStop: () => void;
+  models: ModelConfig[];
+  activeModel: ModelConfig;
+  onModelChange: (model: ModelConfig) => void;
 }
 
 export function ChatPanel({
@@ -28,6 +37,9 @@ export function ChatPanel({
   error,
   onSend,
   onStop,
+  models,
+  activeModel,
+  onModelChange,
 }: ChatPanelProps) {
   const [draft, setDraft] = useState("");
   const [collapsed, setCollapsed] = useState(false);
@@ -60,7 +72,26 @@ export function ChatPanel({
     >
       <header className="flex items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold">{AI_NAME}</span>
+          <SelectRoot
+            value={activeModel.id}
+            onValueChange={(id) => {
+              const m = models.find((x) => x.id === (id as string));
+              if (m) onModelChange(m);
+            }}
+          >
+            <SelectTrigger aria-label="Switch model">
+              <span className="font-semibold">{activeModel.label}</span>
+            </SelectTrigger>
+            <SelectPositioner>
+              <SelectPopup>
+                {models.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.label}
+                  </SelectItem>
+                ))}
+              </SelectPopup>
+            </SelectPositioner>
+          </SelectRoot>
           <span
             className={cn(
               "inline-block size-2 rounded-full",
@@ -180,19 +211,36 @@ function MessageBubble({ message }: { message: ChatMessage }) {
             remarkPlugins={[remarkGfm]}
             components={{
               p: ({ children }) => <p className="mb-1 last:mb-0">{children}</p>,
-              strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+              strong: ({ children }) => (
+                <strong className="font-semibold">{children}</strong>
+              ),
               em: ({ children }) => <em className="italic">{children}</em>,
               code: ({ children }) => (
-                <code className="rounded bg-black/20 px-1 py-0.5 font-mono text-xs">{children}</code>
+                <code className="rounded bg-black/20 px-1 py-0.5 font-mono text-xs">
+                  {children}
+                </code>
               ),
               pre: ({ children }) => (
-                <pre className="my-1 overflow-x-auto rounded bg-black/20 p-2 font-mono text-xs">{children}</pre>
+                <pre className="my-1 overflow-x-auto rounded bg-black/20 p-2 font-mono text-xs">
+                  {children}
+                </pre>
               ),
-              ul: ({ children }) => <ul className="mb-1 ml-4 list-disc">{children}</ul>,
-              ol: ({ children }) => <ol className="mb-1 ml-4 list-decimal">{children}</ol>,
+              ul: ({ children }) => (
+                <ul className="mb-1 ml-4 list-disc">{children}</ul>
+              ),
+              ol: ({ children }) => (
+                <ol className="mb-1 ml-4 list-decimal">{children}</ol>
+              ),
               li: ({ children }) => <li className="mb-0.5">{children}</li>,
               a: ({ href, children }) => (
-                <a href={href} target="_blank" rel="noreferrer" className="underline opacity-80 hover:opacity-100">{children}</a>
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline opacity-80 hover:opacity-100"
+                >
+                  {children}
+                </a>
               ),
             }}
           >

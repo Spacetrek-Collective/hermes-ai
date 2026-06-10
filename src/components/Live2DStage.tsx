@@ -2,7 +2,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 're
 import { Application, Ticker } from 'pixi.js'
 import { Live2DModel } from 'pixi-live2d-display-lipsyncpatch/cubism4'
 import type { Mood } from '@/lib/mood'
-import { MOOD_REACTIONS } from '@/lib/mood'
+import type { ModelConfig } from '@/lib/models'
 
 Live2DModel.registerTicker(Ticker)
 
@@ -11,39 +11,30 @@ export interface Live2DStageHandle {
 }
 
 interface Live2DStageProps {
-  modelUrl: string
+  model: ModelConfig
   className?: string
   onHit?: (area: string) => void
 }
 
 const FIT = 0.9
 
-const HIT_REACTIONS: Record<
-  string,
-  { motion?: string; randomExpression?: boolean }
-> = {
-  Head: { motion: 'Tap', randomExpression: true },
-  Body: { motion: 'Tap' },
-}
-
-const EXPRESSIONS = ['f00', 'f01', 'f02', 'f03', 'f04', 'f05', 'f06', 'f07']
-
 export const Live2DStage = forwardRef<Live2DStageHandle, Live2DStageProps>(
-  ({ modelUrl, className, onHit }, ref) => {
+  ({ model, className, onHit }, ref) => {
     const onHitRef = useRef(onHit)
     onHitRef.current = onHit
-    const containerRef = useRef<HTMLDivElement>(null)
     const modelRef = useRef<InstanceType<typeof Live2DModel> | null>(null)
+    const modelConfigRef = useRef(model)
+    modelConfigRef.current = model
+    const containerRef = useRef<HTMLDivElement>(null)
     const [error, setError] = useState<string | null>(null)
 
     useImperativeHandle(ref, () => ({
       triggerMood(mood: Mood) {
-        const model = modelRef.current
-        if (!model) return
-        const r = MOOD_REACTIONS[mood]
-        console.log('[Live2D] triggerMood', mood, r)
-        model.expression(r.expression)
-        if (r.motion) void model.motion(r.motion)
+        const m = modelRef.current
+        if (!m) return
+        const expr = modelConfigRef.current.moodExpressions[mood]
+        console.log('[Live2D] triggerMood', mood, expr)
+        m.expression(expr)
       },
     }))
 
@@ -61,38 +52,29 @@ export const Live2DStage = forwardRef<Live2DStageHandle, Live2DStageProps>(
       })
       container.appendChild(app.view as HTMLCanvasElement)
 
-      const fit = (model: InstanceType<typeof Live2DModel>) => {
+      const fit = (m: InstanceType<typeof Live2DModel>) => {
         const { width, height } = app.renderer.screen
-        const baseW = model.internalModel.width
-        const baseH = model.internalModel.height
-        const scale = Math.min(width / baseW, height / baseH) * FIT
-        model.scale.set(scale)
-        model.position.set(width / 2, height / 2)
+        const scale = Math.min(width / m.internalModel.width, height / m.internalModel.height) * FIT
+        m.scale.set(scale)
+        m.position.set(width / 2, height / 2)
       }
 
-      Live2DModel.from(modelUrl, { autoInteract: true })
-        .then((model) => {
+      Live2DModel.from(model.url, { autoInteract: true })
+        .then((m) => {
           if (cancelled) {
-            model.destroy()
+            m.destroy()
             return
           }
-          modelRef.current = model
-          model.anchor.set(0.5, 0.5)
-          app.stage.addChild(model)
-          fit(model)
-          app.renderer.on('resize', () => fit(model))
+          modelRef.current = m
+          m.anchor.set(0.5, 0.5)
+          app.stage.addChild(m)
+          fit(m)
+          app.renderer.on('resize', () => fit(m))
 
-          model.on('hit', (areas: string[]) => {
-            for (const area of areas) {
-              const r = HIT_REACTIONS[area]
-              if (r?.motion) void model.motion(r.motion)
-              if (r?.randomExpression) {
-                model.expression(
-                  EXPRESSIONS[Math.floor(Math.random() * EXPRESSIONS.length)],
-                )
-              }
-              onHitRef.current?.(area)
-            }
+          m.on('pointerdown', () => {
+            const exprs = modelConfigRef.current.tapExpressions
+            m.expression(exprs[Math.floor(Math.random() * exprs.length)])
+            onHitRef.current?.('Body')
           })
         })
         .catch((err) => {
@@ -105,7 +87,7 @@ export const Live2DStage = forwardRef<Live2DStageHandle, Live2DStageProps>(
         modelRef.current = null
         app.destroy(true, { children: true, texture: true })
       }
-    }, [modelUrl])
+    }, [model.url])
 
     return (
       <div ref={containerRef} className={className}>

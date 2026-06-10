@@ -14,9 +14,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import type { Conversation } from "@/types/hermes";
 
-const AI_NAME =
-  (import.meta.env.VITE_AI_NAME as string | undefined) ?? "Hermes";
-
 interface ConversationSidebarProps {
   conversations: Conversation[];
   activeId: string;
@@ -63,7 +60,7 @@ export function ConversationSidebar({
             <span className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
               <Sparkles className="size-4" />
             </span>
-            <span className="text-sm font-semibold">{AI_NAME}</span>
+            <span className="text-sm font-semibold">Hermes AI</span>
           </div>
           <div className="flex items-center gap-1">
             <Button
