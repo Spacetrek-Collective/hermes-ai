@@ -57,9 +57,20 @@ Open http://localhost:7200.
 
 Character models live in `public/models/`. Each model is registered in `src/lib/models.ts` with its mood expression mapping and tap expressions. The active model is persisted in `localStorage` under `hermes:model`.
 
+| ID | Label |
+|---|---|
+| `changli` | Changli |
+| `vivian` | Vivian |
+| `camellya` | Camellya |
+| `ellen` | Ellen |
+| `jane-doe` | Jane Doe |
+| `yachiyo` | Yachiyo |
+| `nicole` | Nicole |
+| `villhaze` | Villhaze |
+
 To add a new model:
 1. Drop the Cubism 4 model folder into `public/models/`
-2. Add expressions to the `.model3.json` `FileReferences.Expressions` array
+2. Add expressions to the `.model3.json` `FileReferences.Expressions` array (if not already present)
 3. Register it in `src/lib/models.ts` with mood and tap expression names
 
 Supported moods: `happy`, `sad`, `surprised`, `angry`, `neutral`, `embarrassed`.
@@ -105,6 +116,32 @@ public/
 bun run build     # tsc -b && vite build
 bun run preview
 ```
+
+## Deployment
+
+### Cloudflare Pages (Wrangler)
+
+```bash
+bun run deploy    # build + wrangler deploy
+```
+
+### VPS / Dokploy (Docker)
+
+`VITE_*` vars bake into the bundle at build time — pass them as build args:
+
+```bash
+docker build \
+  --build-arg VITE_HERMES_URL=https://your-api \
+  --build-arg VITE_HERMES_API_KEY=your-key \
+  --build-arg VITE_HERMES_MODEL=hermes-agent \
+  --build-arg VITE_AUTH_USERNAME=admin \
+  --build-arg VITE_AUTH_PASSWORD=change-me \
+  -t hermes-ai .
+
+docker run -p 80:80 hermes-ai
+```
+
+In Dokploy: set the build args above in the application settings, expose port `80`.
 
 ## Licensing / attribution
 
