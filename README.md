@@ -81,7 +81,6 @@ Character models live in `public/models/`. Each model is registered in `src/lib/
 | `changli` | Changli |
 | `vivian` | Vivian |
 | `camellya` | Camellya |
-| `ellen` | Ellen |
 | `jane-doe` | Jane Doe |
 | `yachiyo` | Yachiyo |
 | `nicole` | Nicole |

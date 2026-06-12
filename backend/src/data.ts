@@ -5,7 +5,7 @@ import { db } from "./db";
 const SECRET = process.env.JWT_SECRET ?? "change-me-to-a-long-random-secret";
 
 // Keys the client is allowed to store (mirror of the old localStorage keys).
-const ALLOWED = new Set(["conversations", "active", "tts", "model", "persona"]);
+const ALLOWED = new Set(["conversations", "active", "tts", "model", "persona", "bg"]);
 
 export const data = new Hono();
 

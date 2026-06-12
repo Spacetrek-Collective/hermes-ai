@@ -6,10 +6,11 @@ const MINIMAX_BASE =
   (import.meta.env.VITE_MINIMAX_BASE_URL as string | undefined) ??
   'https://api.minimax.io/v1'
 
-const MINIMAX_API_KEY =
+// Env values are fallbacks only — the key + voice are now set in Settings.
+const ENV_MINIMAX_API_KEY =
   (import.meta.env.VITE_MINIMAX_API_KEY as string | undefined) ?? ''
 
-const MINIMAX_VOICE_ID =
+const ENV_MINIMAX_VOICE_ID =
   (import.meta.env.VITE_MINIMAX_VOICE_ID as string | undefined) ?? ''
 
 export function useTTS() {
@@ -56,9 +57,7 @@ export function useTTS() {
       // Edge TTS (free) — synthesized by the backend, no API key needed.
       if (config.provider === 'edge') {
         setIsSpeaking(true)
-        const voice = config.voice?.endsWith('Neural')
-          ? config.voice
-          : EDGE_DEFAULT_VOICE
+        const voice = config.edgeVoice || EDGE_DEFAULT_VOICE
         const blob = await edgeTTS(text.trim(), voice, config.pitch)
         if (!blob) {
           console.warn('[TTS] Edge TTS failed (backend required / unreachable)')
@@ -71,8 +70,9 @@ export function useTTS() {
         return url
       }
 
-      if (!MINIMAX_API_KEY) {
-        console.warn('[TTS] No VITE_MINIMAX_API_KEY set in .env')
+      const minimaxKey = config.minimaxApiKey || ENV_MINIMAX_API_KEY
+      if (!minimaxKey) {
+        console.warn('[TTS] No Minimax API key set in Settings')
         return null
       }
 
@@ -86,15 +86,15 @@ export function useTTS() {
         const endpoint = `${MINIMAX_BASE}/t2a_v2`
         console.log('[TTS] fetching from', endpoint)
 
-        // Voice priority: env variable > saved config > default
-        const voiceId = MINIMAX_VOICE_ID || config.voice || 'female-shaonv'
+        const voiceId =
+          config.minimaxVoice || ENV_MINIMAX_VOICE_ID || 'female-shaonv'
         console.log('[TTS] using voice_id:', voiceId)
 
         const res = await fetch(endpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${MINIMAX_API_KEY}`,
+            Authorization: `Bearer ${minimaxKey}`,
           },
           body: JSON.stringify({
             model: 'speech-01-turbo',
@@ -200,7 +200,15 @@ export function useTTS() {
         return null
       }
     },
-    [config.enabled, config.provider, config.voice, config.pitch, stop],
+    [
+      config.enabled,
+      config.provider,
+      config.pitch,
+      config.edgeVoice,
+      config.minimaxApiKey,
+      config.minimaxVoice,
+      stop,
+    ],
   )
 
   const onSpeakEnd = useCallback(() => {

@@ -53,20 +53,6 @@ export const MODELS: ModelConfig[] = [
     tapExpressions: ['บฺมณ', 'มณบ์'],
   },
   {
-    id: 'ellen',
-    label: 'Ellen',
-    url: '/models/ellen/免费模型艾莲.model3.json',
-    moodExpressions: {
-      happy:       'tang',
-      sad:         'black',
-      surprised:   'shock',
-      angry:       'black',
-      neutral:     'shou',
-      embarrassed: 'red',
-    },
-    tapExpressions: ['tang', 'red', 'shock', 'shou', 'shuiyin', 'black'],
-  },
-  {
     id: 'jane-doe',
     label: 'Jane Doe',
     url: '/models/jane-doe/简.model3.json',

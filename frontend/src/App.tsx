@@ -224,10 +224,8 @@ function App() {
               ttsEnabled={ttsConfig.enabled}
               onTTSToggle={() => setTTSConfig({ enabled: !ttsConfig.enabled })}
               ttsProviders={TTS_PROVIDERS}
-              activeTTSProvider={ttsConfig.provider}
-              onTTSProviderChange={(id) => setTTSConfig({ provider: id })}
-              ttsPitch={ttsConfig.pitch}
-              onTTSPitchChange={(pitch) => setTTSConfig({ pitch })}
+              ttsConfig={ttsConfig}
+              onTTSConfigChange={setTTSConfig}
               bg={bg}
               bgPresets={bgPresets}
               onBgChange={handleBgChange}

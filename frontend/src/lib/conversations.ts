@@ -31,6 +31,9 @@ export async function loadConversations(): Promise<Conversation[]> {
   if (!Array.isArray(parsed)) return [];
   return parsed.map((c) => ({
     ...c,
+    // Guard timestamps so sidebar sorting (by updatedAt) never sees NaN.
+    createdAt: c.createdAt ?? Date.now(),
+    updatedAt: c.updatedAt ?? c.createdAt ?? Date.now(),
     messages: (c.messages ?? []).map(({ streaming: _s, ...m }) => ({
       ...m,
       content: m.content.replace(MOOD_TAG_RE, "").trim(),

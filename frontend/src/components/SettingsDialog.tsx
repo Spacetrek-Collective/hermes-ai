@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
-import type { TTSProvider } from "@/lib/tts";
+import { EDGE_VOICES, type TTSProvider, type TTSConfig } from "@/lib/tts";
 import type { BgPreset } from "@/lib/background";
 
 const CUSTOM_URL = "__url__";
@@ -18,10 +18,8 @@ const CUSTOM_URL = "__url__";
 interface SettingsDialogProps {
   onClose: () => void;
   ttsProviders: TTSProvider[];
-  activeTTSProvider: string;
-  onTTSProviderChange: (id: string) => void;
-  ttsPitch: number;
-  onTTSPitchChange: (pitch: number) => void;
+  ttsConfig: TTSConfig;
+  onTTSConfigChange: (patch: Partial<TTSConfig>) => void;
   bg: string;
   bgPresets: BgPreset[];
   onBgChange: (value: string) => void;
@@ -30,10 +28,8 @@ interface SettingsDialogProps {
 export function SettingsDialog({
   onClose,
   ttsProviders,
-  activeTTSProvider,
-  onTTSProviderChange,
-  ttsPitch,
-  onTTSPitchChange,
+  ttsConfig,
+  onTTSConfigChange,
   bg,
   bgPresets,
   onBgChange,
@@ -84,16 +80,18 @@ export function SettingsDialog({
               <span className="text-sm">Provider</span>
               <div className="flex justify-end">
                 <SelectRoot
-                  value={activeTTSProvider}
-                  onValueChange={(id) => onTTSProviderChange(id as string)}
+                  value={ttsConfig.provider}
+                  onValueChange={(id) =>
+                    onTTSConfigChange({ provider: id as string })
+                  }
                 >
                   <SelectTrigger
                     aria-label="TTS provider"
                     className="min-w-36 justify-between"
                   >
                     <SelectValue>
-                      {ttsProviders.find((p) => p.id === activeTTSProvider)
-                        ?.label ?? activeTTSProvider}
+                      {ttsProviders.find((p) => p.id === ttsConfig.provider)
+                        ?.label ?? ttsConfig.provider}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectPositioner>
@@ -109,7 +107,40 @@ export function SettingsDialog({
               </div>
             </div>
 
-            {activeTTSProvider === "edge" && (
+            {ttsConfig.provider === "edge" && (
+              <div className="grid grid-cols-[5rem_1fr] items-center gap-3">
+                <span className="text-sm">Voice</span>
+                <div className="flex justify-end">
+                  <SelectRoot
+                    value={ttsConfig.edgeVoice}
+                    onValueChange={(id) =>
+                      onTTSConfigChange({ edgeVoice: id as string })
+                    }
+                  >
+                    <SelectTrigger
+                      aria-label="Edge voice"
+                      className="min-w-36 justify-between"
+                    >
+                      <SelectValue>
+                        {EDGE_VOICES.find((v) => v.id === ttsConfig.edgeVoice)
+                          ?.label ?? ttsConfig.edgeVoice}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectPositioner>
+                      <SelectPopup>
+                        {EDGE_VOICES.map((v) => (
+                          <SelectItem key={v.id} value={v.id}>
+                            {v.label}
+                          </SelectItem>
+                        ))}
+                      </SelectPopup>
+                    </SelectPositioner>
+                  </SelectRoot>
+                </div>
+              </div>
+            )}
+
+            {ttsConfig.provider === "edge" && (
               <div className="grid grid-cols-[5rem_1fr] items-center gap-3">
                 <span className="text-sm">Pitch</span>
                 <div className="flex items-center gap-3">
@@ -117,18 +148,47 @@ export function SettingsDialog({
                     min={-50}
                     max={50}
                     step={5}
-                    value={ttsPitch}
+                    value={ttsConfig.pitch}
                     onValueChange={(v) =>
-                      onTTSPitchChange(Array.isArray(v) ? v[0] : v)
+                      onTTSConfigChange({ pitch: Array.isArray(v) ? v[0] : v })
                     }
                     aria-label="Edge TTS pitch"
                     className="flex-1"
                   />
                   <span className="w-8 shrink-0 text-right text-sm tabular-nums text-muted-foreground">
-                    {ttsPitch > 0 ? `+${ttsPitch}` : ttsPitch}
+                    {ttsConfig.pitch > 0 ? `+${ttsConfig.pitch}` : ttsConfig.pitch}
                   </span>
                 </div>
               </div>
+            )}
+
+            {ttsConfig.provider === "minimax" && (
+              <>
+                <div className="grid grid-cols-[5rem_1fr] items-center gap-3">
+                  <span className="text-sm">API key</span>
+                  <Input
+                    type="password"
+                    value={ttsConfig.minimaxApiKey}
+                    onChange={(e) =>
+                      onTTSConfigChange({ minimaxApiKey: e.target.value })
+                    }
+                    placeholder="Minimax API key"
+                    aria-label="Minimax API key"
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="grid grid-cols-[5rem_1fr] items-center gap-3">
+                  <span className="text-sm">Voice ID</span>
+                  <Input
+                    value={ttsConfig.minimaxVoice}
+                    onChange={(e) =>
+                      onTTSConfigChange({ minimaxVoice: e.target.value })
+                    }
+                    placeholder="female-shaonv"
+                    aria-label="Minimax voice ID"
+                  />
+                </div>
+              </>
             )}
           </section>
 

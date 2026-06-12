@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 import { MOOD_TAG_RE } from "@/lib/mood";
 import type { ChatMessage } from "@/types/hermes";
 import type { ModelConfig } from "@/lib/models";
-import type { TTSProvider } from "@/lib/tts";
+import type { TTSProvider, TTSConfig } from "@/lib/tts";
 import type { BgPreset } from "@/lib/background";
 
 interface ChatPanelProps {
@@ -35,10 +35,8 @@ interface ChatPanelProps {
   ttsEnabled: boolean;
   onTTSToggle: () => void;
   ttsProviders: TTSProvider[];
-  activeTTSProvider: string;
-  onTTSProviderChange: (id: string) => void;
-  ttsPitch: number;
-  onTTSPitchChange: (pitch: number) => void;
+  ttsConfig: TTSConfig;
+  onTTSConfigChange: (patch: Partial<TTSConfig>) => void;
   bg: string;
   bgPresets: BgPreset[];
   onBgChange: (value: string) => void;
@@ -57,10 +55,8 @@ export function ChatPanel({
   ttsEnabled,
   onTTSToggle,
   ttsProviders,
-  activeTTSProvider,
-  onTTSProviderChange,
-  ttsPitch,
-  onTTSPitchChange,
+  ttsConfig,
+  onTTSConfigChange,
   bg,
   bgPresets,
   onBgChange,
@@ -242,10 +238,8 @@ export function ChatPanel({
         <SettingsDialog
           onClose={() => setSettingsOpen(false)}
           ttsProviders={ttsProviders}
-          activeTTSProvider={activeTTSProvider}
-          onTTSProviderChange={onTTSProviderChange}
-          ttsPitch={ttsPitch}
-          onTTSPitchChange={onTTSPitchChange}
+          ttsConfig={ttsConfig}
+          onTTSConfigChange={onTTSConfigChange}
           bg={bg}
           bgPresets={bgPresets}
           onBgChange={onBgChange}
@@ -269,7 +263,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
       </Avatar>
       <div
         className={cn(
-          "max-w-[80%] rounded-2xl px-3 py-2 text-sm",
+          "min-w-0 max-w-[80%] overflow-hidden rounded-2xl px-3 py-2 text-sm",
           isUser
             ? "rounded-tr-sm bg-primary text-primary-foreground whitespace-pre-wrap"
             : "rounded-tl-sm bg-muted text-foreground",
@@ -281,15 +275,34 @@ function MessageBubble({ message }: { message: ChatMessage }) {
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
-              p: ({ children }) => <p className="mb-1 last:mb-0">{children}</p>,
+              p: ({ children }) => (
+                <p className="mb-1 break-words last:mb-0">{children}</p>
+              ),
               strong: ({ children }) => (
                 <strong className="font-semibold">{children}</strong>
               ),
               em: ({ children }) => <em className="italic">{children}</em>,
               code: ({ children }) => (
-                <code className="rounded bg-black/20 px-1 py-0.5 font-mono text-xs">
+                <code className="rounded bg-black/20 px-1 py-0.5 font-mono text-xs break-words">
                   {children}
                 </code>
+              ),
+              table: ({ children }) => (
+                <div className="my-1 max-w-full overflow-x-auto">
+                  <table className="w-max border-collapse text-xs">
+                    {children}
+                  </table>
+                </div>
+              ),
+              th: ({ children }) => (
+                <th className="border border-border px-2 py-1 text-left align-top font-semibold">
+                  {children}
+                </th>
+              ),
+              td: ({ children }) => (
+                <td className="border border-border px-2 py-1 align-top">
+                  {children}
+                </td>
               ),
               pre: ({ children }) => (
                 <pre className="my-1 overflow-x-auto rounded bg-black/20 p-2 font-mono text-xs">

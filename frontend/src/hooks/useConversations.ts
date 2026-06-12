@@ -120,9 +120,10 @@ export function useConversations() {
     })
   }, [])
 
-  // Most-recently-updated first for the sidebar.
+  // Most-recently-updated first for the sidebar. Coerce missing timestamps to 0
+  // so one bad entry can't poison the comparator (NaN) and break the order.
   const conversations = useMemo(
-    () => [...list].sort((a, b) => b.updatedAt - a.updatedAt),
+    () => [...list].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)),
     [list],
   )
 
