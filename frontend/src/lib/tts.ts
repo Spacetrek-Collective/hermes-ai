@@ -6,21 +6,28 @@ export interface TTSProvider {
 }
 
 export const TTS_PROVIDERS: TTSProvider[] = [
+  { id: 'edge', label: 'Edge (free)' },
   { id: 'minimax', label: 'Minimax' },
 ]
+
+// Default voice used for the Edge provider (overridable per config).
+export const EDGE_DEFAULT_VOICE = 'en-US-AriaNeural'
 
 export interface TTSConfig {
   provider: string
   voice: string
   enabled: boolean
+  /** Edge TTS pitch offset in Hz (-100..100, 0 = default). */
+  pitch: number
 }
 
 const STORAGE_KEY = 'tts'
 
 export const DEFAULT_TTS_CONFIG: TTSConfig = {
-  provider: 'minimax',
+  provider: 'edge',
   voice: 'female-shaonv',
   enabled: true,
+  pitch: 0,
 }
 
 export async function loadTTSConfig(): Promise<TTSConfig> {

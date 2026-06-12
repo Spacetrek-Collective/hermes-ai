@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { DEFAULT_TTS_CONFIG, loadTTSConfig, saveTTSConfig, type TTSConfig } from '@/lib/tts'
+import { DEFAULT_TTS_CONFIG, EDGE_DEFAULT_VOICE, loadTTSConfig, saveTTSConfig, type TTSConfig } from '@/lib/tts'
+import { edgeTTS } from '@/lib/api'
 
 const MINIMAX_BASE =
   (import.meta.env.VITE_MINIMAX_BASE_URL as string | undefined) ??
@@ -49,12 +50,31 @@ export function useTTS() {
   const speak = useCallback(
     async (text: string): Promise<string | null> => {
       if (!config.enabled || !text.trim()) return null
+
+      stop()
+
+      // Edge TTS (free) — synthesized by the backend, no API key needed.
+      if (config.provider === 'edge') {
+        setIsSpeaking(true)
+        const voice = config.voice?.endsWith('Neural')
+          ? config.voice
+          : EDGE_DEFAULT_VOICE
+        const blob = await edgeTTS(text.trim(), voice, config.pitch)
+        if (!blob) {
+          console.warn('[TTS] Edge TTS failed (backend required / unreachable)')
+          setIsSpeaking(false)
+          return null
+        }
+        const url = URL.createObjectURL(blob)
+        currentUrlRef.current = url
+        setIsSpeaking(true)
+        return url
+      }
+
       if (!MINIMAX_API_KEY) {
         console.warn('[TTS] No VITE_MINIMAX_API_KEY set in .env')
         return null
       }
-
-      stop()
 
       const controller = new AbortController()
       abortRef.current = controller
@@ -180,7 +200,7 @@ export function useTTS() {
         return null
       }
     },
-    [config.enabled, config.voice, stop],
+    [config.enabled, config.provider, config.voice, config.pitch, stop],
   )
 
   const onSpeakEnd = useCallback(() => {

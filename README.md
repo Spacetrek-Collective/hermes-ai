@@ -14,6 +14,7 @@ AI live-chat with a **Live2D** character. Streams replies from an OpenAI-compati
 - 💬 **Streaming chat** via OpenAI-compatible `/v1/chat/completions` SSE with full message history
 - 📝 **Markdown rendering** in assistant messages (bold, italic, code, lists, links)
 - 🎙️ **Speech-to-text** — free, key-less voice input via the browser Web Speech API
+- 🗣️ **Text-to-speech** — Minimax (API key), or free **Edge TTS** proxied through the backend (no key)
 - 🗂️ **Multiple conversations** persisted locally or to the backend
 - 🔍 **Command-palette search** (`Cmd`/`Ctrl`+`K`) with date grouping + keyboard nav; rename/delete chats
 - 🌸 **Moe-pink** accent theme (light + dark)
@@ -68,6 +69,8 @@ Frontend (`frontend/.env`):
 | `VITE_AUTH_USERNAME` / `VITE_AUTH_PASSWORD` | Soft login gate, used **only** when `VITE_API_URL` is blank | — |
 
 > 🎙️ STT needs **HTTPS** (or `localhost`) + mic permission. The mic button auto-hides where the Web Speech API is unavailable (e.g. Firefox).
+
+> 🗣️ TTS provider is switchable in the chat panel. **Minimax** needs `VITE_MINIMAX_API_KEY`. **Edge (free)** needs no key but is proxied by the backend (`POST /tts`), so it requires `VITE_API_URL` + a logged-in user.
 
 ## Models
 

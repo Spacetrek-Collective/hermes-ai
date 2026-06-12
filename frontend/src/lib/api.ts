@@ -93,6 +93,26 @@ export async function getData<T>(key: string): Promise<T | null> {
   return (await res.json()) as T | null;
 }
 
+// Free Edge TTS via the backend. Returns an mp3 Blob, or null on failure.
+export async function edgeTTS(
+  text: string,
+  voice?: string,
+  pitch?: number,
+): Promise<Blob | null> {
+  if (!apiEnabled()) return null;
+  try {
+    const res = await req("/tts", {
+      method: "POST",
+      body: JSON.stringify({ text, voice, pitch }),
+    });
+    if (res.status === 401) clearToken();
+    if (!res.ok) return null;
+    return await res.blob();
+  } catch {
+    return null;
+  }
+}
+
 export async function putData(key: string, value: unknown): Promise<void> {
   const res = await req(`/data/${key}`, {
     method: "PUT",

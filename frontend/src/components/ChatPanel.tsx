@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ChevronDown, Mic, MicOff, Send, Square, Volume2 } from "lucide-react";
+import { ChevronDown, Mic, Send, Settings, Square, Volume2, VolumeOff, } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -14,12 +14,14 @@ import {
   SelectPopup,
   SelectItem,
 } from "@/components/ui/select";
+import { SettingsDialog } from "@/components/SettingsDialog";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { cn } from "@/lib/utils";
 import { MOOD_TAG_RE } from "@/lib/mood";
 import type { ChatMessage } from "@/types/hermes";
 import type { ModelConfig } from "@/lib/models";
 import type { TTSProvider } from "@/lib/tts";
+import type { BgPreset } from "@/lib/background";
 
 interface ChatPanelProps {
   messages: ChatMessage[];
@@ -35,6 +37,11 @@ interface ChatPanelProps {
   ttsProviders: TTSProvider[];
   activeTTSProvider: string;
   onTTSProviderChange: (id: string) => void;
+  ttsPitch: number;
+  onTTSPitchChange: (pitch: number) => void;
+  bg: string;
+  bgPresets: BgPreset[];
+  onBgChange: (value: string) => void;
   isSpeaking: boolean;
 }
 
@@ -52,10 +59,16 @@ export function ChatPanel({
   ttsProviders,
   activeTTSProvider,
   onTTSProviderChange,
+  ttsPitch,
+  onTTSPitchChange,
+  bg,
+  bgPresets,
+  onBgChange,
   isSpeaking,
 }: ChatPanelProps) {
   const [draft, setDraft] = useState("");
   const [collapsed, setCollapsed] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const viewportRef = useRef<HTMLDivElement>(null);
 
   const speech = useSpeechRecognition({ onTranscript: setDraft });
@@ -105,27 +118,6 @@ export function ChatPanel({
               </SelectPopup>
             </SelectPositioner>
           </SelectRoot>
-          <SelectRoot
-            value={activeTTSProvider}
-            onValueChange={(id) => onTTSProviderChange(id as string)}
-          >
-            <SelectTrigger aria-label="Switch TTS provider" className="gap-1">
-              <Volume2 className="size-3.5" />
-              <span className="text-xs">
-                {ttsProviders.find((p) => p.id === activeTTSProvider)?.label ??
-                  activeTTSProvider}
-              </span>
-            </SelectTrigger>
-            <SelectPositioner>
-              <SelectPopup>
-                {ttsProviders.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.label}
-                  </SelectItem>
-                ))}
-              </SelectPopup>
-            </SelectPositioner>
-          </SelectRoot>
           <Button
             type="button"
             size="icon"
@@ -135,10 +127,20 @@ export function ChatPanel({
             onClick={onTTSToggle}
           >
             {ttsEnabled ? (
-              <Mic className="size-3.5" />
+              <Volume2 className="size-3.5" />
             ) : (
-              <MicOff className="size-3.5 text-muted-foreground" />
+              <VolumeOff className="size-3.5 text-muted-foreground" />
             )}
+          </Button>
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="size-7"
+            aria-label="Settings"
+            onClick={() => setSettingsOpen(true)}
+          >
+            <Settings className="size-3.5" />
           </Button>
         </div>
         <div className="flex items-center gap-2">
@@ -234,6 +236,20 @@ export function ChatPanel({
             )}
           </form>
         </>
+      )}
+
+      {settingsOpen && (
+        <SettingsDialog
+          onClose={() => setSettingsOpen(false)}
+          ttsProviders={ttsProviders}
+          activeTTSProvider={activeTTSProvider}
+          onTTSProviderChange={onTTSProviderChange}
+          ttsPitch={ttsPitch}
+          onTTSPitchChange={onTTSPitchChange}
+          bg={bg}
+          bgPresets={bgPresets}
+          onBgChange={onBgChange}
+        />
       )}
     </Card>
   );

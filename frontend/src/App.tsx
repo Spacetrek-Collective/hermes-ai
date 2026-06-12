@@ -11,6 +11,12 @@ import { useConversations } from "@/hooks/useConversations";
 import { useHermesChat } from "@/hooks/useHermesChat";
 import { useAuth } from "@/hooks/useAuth";
 import { authStatus } from "@/lib/api";
+import {
+  loadBackground,
+  saveBackground,
+  fetchBgPresets,
+  type BgPreset,
+} from "@/lib/background";
 import { useTTS } from "@/hooks/useTTS";
 import { MODELS, loadActiveModel, saveActiveModel } from "@/lib/models";
 import { TTS_PROVIDERS } from "@/lib/tts";
@@ -24,6 +30,27 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [activeModel, setActiveModel] = useState<ModelConfig>(MODELS[0]);
+  const [bg, setBg] = useState("");
+  const [bgPresets, setBgPresets] = useState<BgPreset[]>([]);
+
+  // Hydrate background + load presets after mount.
+  useEffect(() => {
+    let cancelled = false;
+    void loadBackground().then((v) => {
+      if (!cancelled) setBg(v);
+    });
+    void fetchBgPresets().then((p) => {
+      if (!cancelled) setBgPresets(p);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleBgChange = useCallback((value: string) => {
+    saveBackground(value);
+    setBg(value);
+  }, []);
 
   // First-run check: if no accounts exist yet, show register instead of login.
   useEffect(() => {
@@ -163,7 +190,10 @@ function App() {
         />
       )}
 
-      <main className="relative h-full w-full overflow-hidden bg-linear-to-b from-background to-secondary">
+      <main
+        className="relative h-full w-full overflow-hidden bg-linear-to-b from-background to-secondary bg-cover bg-center"
+        style={bg ? { backgroundImage: `url("${bg}")` } : undefined}
+      >
         <Live2DStage
           ref={liveRef}
           model={activeModel}
@@ -196,6 +226,11 @@ function App() {
               ttsProviders={TTS_PROVIDERS}
               activeTTSProvider={ttsConfig.provider}
               onTTSProviderChange={(id) => setTTSConfig({ provider: id })}
+              ttsPitch={ttsConfig.pitch}
+              onTTSPitchChange={(pitch) => setTTSConfig({ pitch })}
+              bg={bg}
+              bgPresets={bgPresets}
+              onBgChange={handleBgChange}
               isSpeaking={ttsSpeaking}
             />
           </div>
