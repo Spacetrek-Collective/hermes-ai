@@ -11,9 +11,22 @@ export const TTS_PROVIDERS: TTSProvider[] = [
   { id: 'gemini', label: 'Gemini' },
 ]
 
-export const GEMINI_VOICES = [
-  'Zephyr', 'Puck', 'Charon', 'Kore', 'Fenrir',
-  'Leda', 'Orus', 'Aoede', 'Sulafat', 'Algieba',
+export interface GeminiVoice {
+  id: string
+  label: string
+}
+
+export const GEMINI_VOICES: GeminiVoice[] = [
+  { id: 'Zephyr',   label: 'Zephyr — Female, bright' },
+  { id: 'Leda',     label: 'Leda — Female, youthful' },
+  { id: 'Kore',     label: 'Kore — Female, firm' },
+  { id: 'Aoede',    label: 'Aoede — Female, breezy' },
+  { id: 'Sulafat',  label: 'Sulafat — Female, warm' },
+  { id: 'Puck',     label: 'Puck — Male, upbeat' },
+  { id: 'Charon',   label: 'Charon — Male, informational' },
+  { id: 'Fenrir',   label: 'Fenrir — Male, excitable' },
+  { id: 'Orus',     label: 'Orus — Male, firm' },
+  { id: 'Algieba',  label: 'Algieba — Male, smooth' },
 ]
 
 export const GEMINI_DEFAULT_MODEL = 'gemini-2.5-flash-preview-tts'

@@ -228,15 +228,17 @@ export function SettingsDialog({
                     >
                       <SelectTrigger
                         aria-label="Gemini voice"
-                        className="min-w-36 justify-between"
+                        className="min-w-48 justify-between"
                       >
-                        <SelectValue>{ttsConfig.geminiVoice}</SelectValue>
+                        <SelectValue>
+                          {GEMINI_VOICES.find((v) => v.id === ttsConfig.geminiVoice)?.label ?? ttsConfig.geminiVoice}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectPositioner>
                         <SelectPopup>
                           {GEMINI_VOICES.map((v) => (
-                            <SelectItem key={v} value={v}>
-                              {v}
+                            <SelectItem key={v.id} value={v.id}>
+                              {v.label}
                             </SelectItem>
                           ))}
                         </SelectPopup>
