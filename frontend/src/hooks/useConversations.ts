@@ -18,20 +18,40 @@ import {
 import type { ChatMessage, Conversation } from '@/types/hermes'
 
 function initState(): { list: Conversation[]; activeId: string } {
-  const loaded = loadConversations()
-  const list = loaded.length ? loaded : [createConversation()]
-  const stored = loadActiveId()
-  const activeId =
-    stored && list.some((c) => c.id === stored) ? stored : list[0].id
-  return { list, activeId }
+  const conv = createConversation()
+  return { list: [conv], activeId: conv.id }
 }
 
 export function useConversations() {
   const [{ list, activeId }, setState] = useState(initState)
 
-  // Persist (debounced) so streaming token updates don't hammer localStorage.
+  // Storage is async (server or localStorage) — hydrate after mount. Guard the
+  // save effects until then so the initial blank chat never clobbers stored data.
+  const hydrated = useRef(false)
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      const [loaded, stored] = await Promise.all([
+        loadConversations(),
+        loadActiveId(),
+      ])
+      if (cancelled) return
+      if (loaded.length) {
+        const activeId =
+          stored && loaded.some((c) => c.id === stored) ? stored : loaded[0].id
+        setState({ list: loaded, activeId })
+      }
+      hydrated.current = true
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  // Persist (debounced) so streaming token updates don't hammer storage.
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => {
+    if (!hydrated.current) return
     if (saveTimer.current) clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(() => saveConversations(list), 300)
     return () => {
@@ -40,7 +60,7 @@ export function useConversations() {
   }, [list])
 
   useEffect(() => {
-    saveActiveId(activeId)
+    if (hydrated.current) saveActiveId(activeId)
   }, [activeId])
 
   const active = useMemo(

@@ -1,5 +1,5 @@
-import { useCallback, useRef, useState } from 'react'
-import { loadTTSConfig, saveTTSConfig, type TTSConfig } from '@/lib/tts'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { DEFAULT_TTS_CONFIG, loadTTSConfig, saveTTSConfig, type TTSConfig } from '@/lib/tts'
 
 const MINIMAX_BASE =
   (import.meta.env.VITE_MINIMAX_BASE_URL as string | undefined) ??
@@ -12,10 +12,21 @@ const MINIMAX_VOICE_ID =
   (import.meta.env.VITE_MINIMAX_VOICE_ID as string | undefined) ?? ''
 
 export function useTTS() {
-  const [config, setConfigState] = useState<TTSConfig>(loadTTSConfig)
+  const [config, setConfigState] = useState<TTSConfig>(DEFAULT_TTS_CONFIG)
   const [isSpeaking, setIsSpeaking] = useState(false)
   const abortRef = useRef<AbortController | null>(null)
   const currentUrlRef = useRef<string | null>(null)
+
+  // Hydrate from async storage after mount.
+  useEffect(() => {
+    let cancelled = false
+    void loadTTSConfig().then((cfg) => {
+      if (!cancelled) setConfigState(cfg)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const setConfig = useCallback((next: Partial<TTSConfig>) => {
     setConfigState((prev) => {

@@ -16,11 +16,22 @@ import { TTS_PROVIDERS } from "@/lib/tts";
 import type { ModelConfig } from "@/lib/models";
 
 function App() {
-  const { authed, login } = useAuth();
+  const { authed, authEnabled, apiMode, login, register, logout } = useAuth();
   const liveRef = useRef<Live2DStageHandle>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [activeModel, setActiveModel] = useState<ModelConfig>(loadActiveModel);
+  const [activeModel, setActiveModel] = useState<ModelConfig>(MODELS[0]);
+
+  // Hydrate active model from async storage after mount.
+  useEffect(() => {
+    let cancelled = false;
+    void loadActiveModel().then((m) => {
+      if (!cancelled) setActiveModel(m);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -65,8 +76,19 @@ function App() {
     setActiveModel(m);
   };
 
+  // Reload after logout so in-memory per-user state (conversations, etc.) resets.
+  const handleLogout = useCallback(() => {
+    logout();
+    window.location.reload();
+  }, [logout]);
+
   if (!authed) {
-    return <LoginScreen onLogin={login} />;
+    return (
+      <LoginScreen
+        onLogin={login}
+        onRegister={apiMode ? register : undefined}
+      />
+    );
   }
 
   return (
@@ -82,6 +104,7 @@ function App() {
         onDelete={deleteChat}
         onRename={renameChat}
         onOpenSearch={() => setSearchOpen(true)}
+        onLogout={authEnabled ? handleLogout : undefined}
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
@@ -105,7 +128,7 @@ function App() {
         <Live2DStage
           ref={liveRef}
           model={activeModel}
-          className="absolute inset-0 sm:right-[380px]"
+          className="absolute inset-0 sm:right-95"
         />
 
         <Button

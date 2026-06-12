@@ -1,0 +1,44 @@
+# Hermes AI — full stack (frontend + backend).
+#
+# VITE_API_URL is baked into the frontend bundle at BUILD time and is fetched by
+# the browser, so it must be the URL the browser can reach the backend at — not
+# the internal compose service name. Defaults below assume same-host on the
+# published ports. Override via a root .env file or the shell.
+services:
+  backend:
+    build:
+      context: ./backend
+    env_file:
+      - ./backend/.env
+    environment:
+      # Override .env defaults so they match the compose-published frontend.
+      CORS_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:8080}
+      DB_PATH: /data/hermes.db
+    volumes:
+      - backend-data:/data
+    ports:
+      - "${BACKEND_PORT:-8787}:8787"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8787}
+        VITE_AUTH_USERNAME: ${VITE_AUTH_USERNAME:-}
+        VITE_AUTH_PASSWORD: ${VITE_AUTH_PASSWORD:-}
+        VITE_HERMES_URL: ${VITE_HERMES_URL:-}
+        VITE_HERMES_API_KEY: ${VITE_HERMES_API_KEY:-}
+        VITE_HERMES_MODEL: ${VITE_HERMES_MODEL:-hermes-agent}
+        VITE_HERMES_MOCK: ${VITE_HERMES_MOCK:-false}
+        VITE_MINIMAX_BASE_URL: ${VITE_MINIMAX_BASE_URL:-https://api.minimax.io/v1}
+        VITE_MINIMAX_API_KEY: ${VITE_MINIMAX_API_KEY:-}
+        VITE_MINIMAX_VOICE_ID: ${VITE_MINIMAX_VOICE_ID:-female-shaonv}
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  backend-data:

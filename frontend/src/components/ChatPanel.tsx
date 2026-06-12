@@ -140,6 +140,8 @@ export function ChatPanel({
               <MicOff className="size-3.5 text-muted-foreground" />
             )}
           </Button>
+        </div>
+        <div className="flex items-center gap-2">
           <span
             className={cn(
               "inline-block size-2 rounded-full",
@@ -148,8 +150,6 @@ export function ChatPanel({
                 : "bg-muted-foreground/40",
             )}
           />
-        </div>
-        <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">
             {isStreaming && isSpeaking
               ? "thinking + voice…"

@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Backend SQLite
+*.db
+*.db-shm
+*.db-wal
+.wrangler/
+
 # Env (keep .env.example)
 .env
 .env.*
@@ -27,3 +33,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Vite cache
+.vite/

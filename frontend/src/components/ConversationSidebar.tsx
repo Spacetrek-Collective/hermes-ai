@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Check,
+  LogOut,
   Pencil,
   Search,
   Sparkles,
@@ -22,6 +23,8 @@ interface ConversationSidebarProps {
   onDelete: (id: string) => void;
   onRename: (id: string, title: string) => void;
   onOpenSearch: () => void;
+  /** When set, a logout button is shown in the header. */
+  onLogout?: () => void;
   /** Mobile drawer open state. */
   open: boolean;
   onClose: () => void;
@@ -35,6 +38,7 @@ export function ConversationSidebar({
   onDelete,
   onRename,
   onOpenSearch,
+  onLogout,
   open,
   onClose,
 }: ConversationSidebarProps) {
@@ -72,6 +76,17 @@ export function ConversationSidebar({
             >
               <Search />
             </Button>
+            {onLogout && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8"
+                aria-label="Log out"
+                onClick={onLogout}
+              >
+                <LogOut />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"

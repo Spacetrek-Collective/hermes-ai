@@ -5,18 +5,29 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 interface LoginScreenProps {
-  onLogin: (username: string, password: string) => boolean;
+  // Resolve to an error string, or null on success.
+  onLogin: (username: string, password: string) => Promise<string | null>;
+  // When provided, a register toggle is shown (backend mode only).
+  onRegister?: (username: string, password: string) => Promise<string | null>;
 }
 
-export function LoginScreen({ onLogin }: LoginScreenProps) {
+export function LoginScreen({ onLogin, onRegister }: LoginScreenProps) {
+  const [mode, setMode] = useState<"login" | "register">("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  const onSubmit = (e: FormEvent) => {
+  const isRegister = mode === "register" && !!onRegister;
+
+  const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!onLogin(username, password)) {
-      setError("Invalid username or password.");
+    setBusy(true);
+    const fn = isRegister ? onRegister! : onLogin;
+    const err = await fn(username, password);
+    setBusy(false);
+    if (err) {
+      setError(err);
       setPassword("");
     }
   };
@@ -29,7 +40,9 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             <Lock className="size-5" />
           </div>
           <h1 className="text-lg font-semibold">Hermes AI</h1>
-          <p className="text-sm text-muted-foreground">Sign in to continue</p>
+          <p className="text-sm text-muted-foreground">
+            {isRegister ? "Create an account" : "Sign in to continue"}
+          </p>
         </div>
 
         <form onSubmit={onSubmit} className="flex flex-col gap-3">
@@ -47,7 +60,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           />
           <Input
             type="password"
-            autoComplete="current-password"
+            autoComplete={isRegister ? "new-password" : "current-password"}
             placeholder="Password"
             aria-label="Password"
             value={password}
@@ -57,10 +70,25 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             }}
           />
           {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button type="submit" className="mt-1 w-full">
-            Sign in
+          <Button type="submit" className="mt-1 w-full" disabled={busy}>
+            {busy ? "Please wait…" : isRegister ? "Create account" : "Sign in"}
           </Button>
         </form>
+
+        {onRegister && (
+          <button
+            type="button"
+            className="text-center cursor-pointer text-sm text-muted-foreground hover:text-foreground"
+            onClick={() => {
+              setMode(mode === "login" ? "register" : "login");
+              setError(null);
+            }}
+          >
+            {mode === "login"
+              ? "Need an account? Register"
+              : "Have an account? Sign in"}
+          </button>
+        )}
       </Card>
     </div>
   );

@@ -1,4 +1,5 @@
 import type { Mood } from './mood'
+import { loadValue, saveValue } from '@/lib/store'
 
 export interface ModelConfig {
   id: string
@@ -123,10 +124,10 @@ export const MODELS: ModelConfig[] = [
   },
 ]
 
-const STORAGE_KEY = 'hermes:model'
+const STORAGE_KEY = 'model'
 
-export function loadActiveModel(): ModelConfig {
-  const saved = localStorage.getItem(STORAGE_KEY)
+export async function loadActiveModel(): Promise<ModelConfig> {
+  const saved = await loadValue<string | null>(STORAGE_KEY, null)
   if (saved) {
     const found = MODELS.find((m) => m.id === saved)
     if (found) return found
@@ -140,5 +141,5 @@ export function loadActiveModel(): ModelConfig {
 }
 
 export function saveActiveModel(id: string) {
-  localStorage.setItem(STORAGE_KEY, id)
+  saveValue(STORAGE_KEY, id)
 }

@@ -2,21 +2,29 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Layout
+
+Bun-workspaces monorepo:
+
+- `frontend/` — React + Vite SPA (the Live2D chat app).
+- `backend/` — Hono + Bun API: JWT auth + per-user key-value store (`bun:sqlite`). Persists what used to live in the browser's `localStorage`.
+
 ## Commands
 
-Runtime is **Bun** (scripts also work with npm/pnpm).
+Runtime is **Bun**. Run from repo root:
 
 ```bash
-bun install
-bun dev          # vite --host, serves on http://localhost:7200
-bun run build    # tsc -b && vite build  (type-check then bundle)
-bun run lint     # eslint .
-bun run preview  # serve the built dist/
+bun install            # installs both workspaces
+bun dev                # runs frontend + backend in parallel (--filter '*')
+bun run dev:web        # frontend only — vite --host, http://localhost:7200
+bun run dev:api        # backend only — Hono, http://localhost:8787
+bun run build          # frontend: tsc -b && vite build
+bun run lint           # frontend: eslint
 ```
 
 No test runner is configured — there are no tests.
 
-Copy `.env.example` → `.env` before running. Without an API backend set `VITE_HERMES_MOCK=true` to stream canned replies.
+Copy `frontend/.env.example` → `frontend/.env` and `backend/.env.example` → `backend/.env` before running. Without an API backend set `VITE_HERMES_MOCK=true` to stream canned replies.
 
 ## Architecture
 
