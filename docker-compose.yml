@@ -6,6 +6,7 @@
 # published ports. Override via a root .env file or the shell.
 services:
   backend:
+    container_name: hermes-backend
     build:
       context: ./backend
     environment:
@@ -25,6 +26,7 @@ services:
     restart: unless-stopped
 
   frontend:
+    container_name: hermes-frontend
     build:
       context: ./frontend
       args:
