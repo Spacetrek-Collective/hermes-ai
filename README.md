@@ -207,8 +207,9 @@ docker build -t hermes-web \
 docker run -p 80:80 hermes-web
 ```
 
-In Dokploy: deploy with the compose file (or the per-service Dockerfiles), set
-the build args / env above, expose ports `8080` and `8787`.
+### Dokploy
+
+Step-by-step guide (domains, env, SSL, volume backup): **[DEPLOY-DOKPLOY.md](DEPLOY-DOKPLOY.md)**.
 
 ## Licensing / attribution
 

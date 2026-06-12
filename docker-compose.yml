@@ -8,12 +8,13 @@ services:
   backend:
     build:
       context: ./backend
-    env_file:
-      - ./backend/.env
     environment:
-      # Override .env defaults so they match the compose-published frontend.
-      CORS_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:8080}
+      # Config comes from the root .env (or Dokploy/host env), NOT backend/.env —
+      # that file is git-ignored and absent on a fresh deploy.
+      PORT: 8787
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in the root .env / deploy env}
       DB_PATH: /data/hermes.db
+      CORS_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:8080}
     volumes:
       - backend-data:/data
     ports:
