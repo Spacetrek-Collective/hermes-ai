@@ -113,6 +113,27 @@ export async function edgeTTS(
   }
 }
 
+export async function geminiTTS(
+  text: string,
+  apiKey: string,
+  model?: string,
+  voice?: string,
+  scene?: string,
+): Promise<Blob | null> {
+  if (!apiEnabled()) return null;
+  try {
+    const res = await req("/tts/gemini", {
+      method: "POST",
+      body: JSON.stringify({ text, apiKey, model, voice, scene }),
+    });
+    if (res.status === 401) clearToken();
+    if (!res.ok) return null;
+    return await res.blob();
+  } catch {
+    return null;
+  }
+}
+
 export async function putData(key: string, value: unknown): Promise<void> {
   const res = await req(`/data/${key}`, {
     method: "PUT",

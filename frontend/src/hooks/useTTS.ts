@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { DEFAULT_TTS_CONFIG, EDGE_DEFAULT_VOICE, loadTTSConfig, saveTTSConfig, type TTSConfig } from '@/lib/tts'
-import { edgeTTS } from '@/lib/api'
+import { edgeTTS, geminiTTS } from '@/lib/api'
 
 const MINIMAX_BASE =
   (import.meta.env.VITE_MINIMAX_BASE_URL as string | undefined) ??
@@ -61,6 +61,31 @@ export function useTTS() {
         const blob = await edgeTTS(text.trim(), voice, config.pitch)
         if (!blob) {
           console.warn('[TTS] Edge TTS failed (backend required / unreachable)')
+          setIsSpeaking(false)
+          return null
+        }
+        const url = URL.createObjectURL(blob)
+        currentUrlRef.current = url
+        setIsSpeaking(true)
+        return url
+      }
+
+      // Gemini TTS — proxied through backend, user supplies API key.
+      if (config.provider === 'gemini') {
+        if (!config.geminiApiKey) {
+          console.warn('[TTS] No Gemini API key set in Settings')
+          return null
+        }
+        setIsSpeaking(true)
+        const blob = await geminiTTS(
+          text.trim(),
+          config.geminiApiKey,
+          config.geminiModel,
+          config.geminiVoice,
+          config.geminiScene,
+        )
+        if (!blob) {
+          console.warn('[TTS] Gemini TTS failed (backend required / unreachable)')
           setIsSpeaking(false)
           return null
         }
@@ -207,6 +232,10 @@ export function useTTS() {
       config.edgeVoice,
       config.minimaxApiKey,
       config.minimaxVoice,
+      config.geminiApiKey,
+      config.geminiModel,
+      config.geminiVoice,
+      config.geminiScene,
       stop,
     ],
   )

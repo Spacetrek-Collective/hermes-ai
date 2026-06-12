@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
-import { EDGE_VOICES, type TTSProvider, type TTSConfig } from "@/lib/tts";
+import { EDGE_VOICES, GEMINI_VOICES, type TTSProvider, type TTSConfig } from "@/lib/tts";
 import type { BgPreset } from "@/lib/background";
 
 const CUSTOM_URL = "__url__";
@@ -186,6 +186,75 @@ export function SettingsDialog({
                     }
                     placeholder="female-shaonv"
                     aria-label="Minimax voice ID"
+                  />
+                </div>
+              </>
+            )}
+
+            {ttsConfig.provider === "gemini" && (
+              <>
+                <div className="grid grid-cols-[5rem_1fr] items-center gap-3">
+                  <span className="text-sm">API key</span>
+                  <Input
+                    type="password"
+                    value={ttsConfig.geminiApiKey}
+                    onChange={(e) =>
+                      onTTSConfigChange({ geminiApiKey: e.target.value })
+                    }
+                    placeholder="Gemini API key"
+                    aria-label="Gemini API key"
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="grid grid-cols-[5rem_1fr] items-center gap-3">
+                  <span className="text-sm">Model</span>
+                  <Input
+                    value={ttsConfig.geminiModel}
+                    onChange={(e) =>
+                      onTTSConfigChange({ geminiModel: e.target.value })
+                    }
+                    placeholder="gemini-2.5-flash-preview-tts"
+                    aria-label="Gemini model"
+                  />
+                </div>
+                <div className="grid grid-cols-[5rem_1fr] items-center gap-3">
+                  <span className="text-sm">Voice</span>
+                  <div className="flex justify-end">
+                    <SelectRoot
+                      value={ttsConfig.geminiVoice}
+                      onValueChange={(v) =>
+                        onTTSConfigChange({ geminiVoice: v as string })
+                      }
+                    >
+                      <SelectTrigger
+                        aria-label="Gemini voice"
+                        className="min-w-36 justify-between"
+                      >
+                        <SelectValue>{ttsConfig.geminiVoice}</SelectValue>
+                      </SelectTrigger>
+                      <SelectPositioner>
+                        <SelectPopup>
+                          {GEMINI_VOICES.map((v) => (
+                            <SelectItem key={v} value={v}>
+                              {v}
+                            </SelectItem>
+                          ))}
+                        </SelectPopup>
+                      </SelectPositioner>
+                    </SelectRoot>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-sm">Scene</span>
+                  <textarea
+                    value={ttsConfig.geminiScene}
+                    onChange={(e) =>
+                      onTTSConfigChange({ geminiScene: e.target.value })
+                    }
+                    placeholder="Act like a kawaii anime girl…"
+                    aria-label="Gemini scene prompt"
+                    rows={3}
+                    className="w-full resize-none rounded-md border bg-input px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                   />
                 </div>
               </>
