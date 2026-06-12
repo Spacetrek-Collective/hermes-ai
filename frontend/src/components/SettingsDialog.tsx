@@ -87,7 +87,7 @@ export function SettingsDialog({
                 >
                   <SelectTrigger
                     aria-label="TTS provider"
-                    className="min-w-36 justify-between"
+                    className="min-w-36 justify-between border border-input"
                   >
                     <SelectValue>
                       {ttsProviders.find((p) => p.id === ttsConfig.provider)
@@ -119,7 +119,7 @@ export function SettingsDialog({
                   >
                     <SelectTrigger
                       aria-label="Edge voice"
-                      className="min-w-36 justify-between"
+                      className="min-w-36 justify-between border border-input"
                     >
                       <SelectValue>
                         {EDGE_VOICES.find((v) => v.id === ttsConfig.edgeVoice)
@@ -228,7 +228,7 @@ export function SettingsDialog({
                     >
                       <SelectTrigger
                         aria-label="Gemini voice"
-                        className="min-w-48 justify-between"
+                        className="min-w-48 justify-between border border-input"
                       >
                         <SelectValue>
                           {GEMINI_VOICES.find((v) => v.id === ttsConfig.geminiVoice)?.label ?? ttsConfig.geminiVoice}
@@ -287,7 +287,7 @@ export function SettingsDialog({
                 >
                   <SelectTrigger
                     aria-label="Background"
-                    className="min-w-36 justify-between"
+                    className="min-w-36 justify-between border border-input"
                   >
                     <SelectValue>
                       {bgSelect === "none"
