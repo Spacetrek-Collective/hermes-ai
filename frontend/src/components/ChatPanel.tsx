@@ -65,6 +65,7 @@ export function ChatPanel({
   const [draft, setDraft] = useState("");
   const [collapsed, setCollapsed] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+
   const viewportRef = useRef<HTMLDivElement>(null);
 
   const speech = useSpeechRecognition({ onTranscript: setDraft });
@@ -128,16 +129,18 @@ export function ChatPanel({
               <VolumeOff className="size-3.5 text-muted-foreground" />
             )}
           </Button>
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="size-7"
-            aria-label="Settings"
-            onClick={() => setSettingsOpen(true)}
-          >
-            <Settings className="size-3.5" />
-          </Button>
+          {!collapsed && (
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="size-7"
+              aria-label="Settings"
+              onClick={() => setSettingsOpen(true)}
+            >
+              <Settings className="size-3.5" />
+            </Button>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <span
@@ -163,7 +166,12 @@ export function ChatPanel({
             variant="ghost"
             className="size-7"
             aria-label={collapsed ? "Expand chat" : "Collapse chat"}
-            onClick={() => setCollapsed((c) => !c)}
+            onClick={() => {
+              setCollapsed((c) => {
+                if (!c) setSettingsOpen(false);
+                return !c;
+              });
+            }}
           >
             <ChevronDown
               className={cn("transition-transform", collapsed && "rotate-180")}
