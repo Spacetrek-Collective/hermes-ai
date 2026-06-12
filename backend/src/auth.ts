@@ -10,6 +10,12 @@ type UserRow = { id: string; username: string; password_hash: string };
 
 export const auth = new Hono();
 
+// Public: lets the UI decide between first-run register vs login.
+auth.get("/status", (c) => {
+  const row = db.query("SELECT COUNT(*) AS n FROM users").get() as { n: number };
+  return c.json({ hasUsers: row.n > 0 });
+});
+
 auth.post("/register", async (c) => {
   const { username, password } = await c.req.json().catch(() => ({}));
   if (!username || !password || password.length < 6) {

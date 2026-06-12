@@ -9,16 +9,22 @@ interface LoginScreenProps {
   onLogin: (username: string, password: string) => Promise<string | null>;
   // When provided, a register toggle is shown (backend mode only).
   onRegister?: (username: string, password: string) => Promise<string | null>;
+  // First-run provisioning: no users yet — show register form, hide toggle.
+  registerOnly?: boolean;
 }
 
-export function LoginScreen({ onLogin, onRegister }: LoginScreenProps) {
+export function LoginScreen({
+  onLogin,
+  onRegister,
+  registerOnly = false,
+}: LoginScreenProps) {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const isRegister = mode === "register" && !!onRegister;
+  const isRegister = registerOnly || (mode === "register" && !!onRegister);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -41,7 +47,11 @@ export function LoginScreen({ onLogin, onRegister }: LoginScreenProps) {
           </div>
           <h1 className="text-lg font-semibold">Hermes AI</h1>
           <p className="text-sm text-muted-foreground">
-            {isRegister ? "Create an account" : "Sign in to continue"}
+            {registerOnly
+              ? "Create the first account"
+              : isRegister
+                ? "Create an account"
+                : "Sign in to continue"}
           </p>
         </div>
 
@@ -75,7 +85,7 @@ export function LoginScreen({ onLogin, onRegister }: LoginScreenProps) {
           </Button>
         </form>
 
-        {onRegister && (
+        {onRegister && !registerOnly && (
           <button
             type="button"
             className="text-center cursor-pointer text-sm text-muted-foreground hover:text-foreground"

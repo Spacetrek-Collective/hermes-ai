@@ -71,6 +71,18 @@ export async function authRequest(
   }
 }
 
+// Whether any account exists yet. Defaults to true on failure so we never
+// expose registration just because the backend is unreachable.
+export async function authStatus(): Promise<{ hasUsers: boolean }> {
+  try {
+    const res = await req("/auth/status", { method: "GET" });
+    if (!res.ok) return { hasUsers: true };
+    return (await res.json()) as { hasUsers: boolean };
+  } catch {
+    return { hasUsers: true };
+  }
+}
+
 export async function getData<T>(key: string): Promise<T | null> {
   const res = await req(`/data/${key}`, { method: "GET" });
   if (res.status === 401) {

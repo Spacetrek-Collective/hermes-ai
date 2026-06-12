@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { useConversations } from "@/hooks/useConversations";
 import { useHermesChat } from "@/hooks/useHermesChat";
 import { useAuth } from "@/hooks/useAuth";
+import { authStatus } from "@/lib/api";
 import { useTTS } from "@/hooks/useTTS";
 import { MODELS, loadActiveModel, saveActiveModel } from "@/lib/models";
 import { TTS_PROVIDERS } from "@/lib/tts";
@@ -18,9 +19,23 @@ import type { ModelConfig } from "@/lib/models";
 function App() {
   const { authed, authEnabled, apiMode, login, register, logout } = useAuth();
   const liveRef = useRef<Live2DStageHandle>(null);
+  // null = still checking (API mode); true when at least one account exists.
+  const [hasUsers, setHasUsers] = useState<boolean | null>(apiMode ? null : true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [activeModel, setActiveModel] = useState<ModelConfig>(MODELS[0]);
+
+  // First-run check: if no accounts exist yet, show register instead of login.
+  useEffect(() => {
+    if (!apiMode || authed) return;
+    let cancelled = false;
+    void authStatus().then((s) => {
+      if (!cancelled) setHasUsers(s.hasUsers);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [authed, apiMode]);
 
   // Hydrate active model from async storage after mount.
   useEffect(() => {
@@ -103,10 +118,14 @@ function App() {
   );
 
   if (!authed) {
+    // Wait for the first-run check before deciding login vs register.
+    if (apiMode && hasUsers === null) return null;
+    const firstRun = apiMode && hasUsers === false;
     return (
       <LoginScreen
         onLogin={handleLogin}
-        onRegister={apiMode ? handleRegister : undefined}
+        onRegister={firstRun ? handleRegister : undefined}
+        registerOnly={firstRun}
       />
     );
   }
