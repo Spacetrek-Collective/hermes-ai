@@ -82,11 +82,31 @@ function App() {
     window.location.reload();
   }, [logout]);
 
+  // Conversations hydrate once at mount — before auth in API mode. Reload on a
+  // successful login so the next mount fetches this user's data with a token.
+  const handleLogin = useCallback(
+    async (u: string, p: string) => {
+      const err = await login(u, p);
+      if (!err) window.location.reload();
+      return err;
+    },
+    [login],
+  );
+
+  const handleRegister = useCallback(
+    async (u: string, p: string) => {
+      const err = await register(u, p);
+      if (!err) window.location.reload();
+      return err;
+    },
+    [register],
+  );
+
   if (!authed) {
     return (
       <LoginScreen
-        onLogin={login}
-        onRegister={apiMode ? register : undefined}
+        onLogin={handleLogin}
+        onRegister={apiMode ? handleRegister : undefined}
       />
     );
   }
